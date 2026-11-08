@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Checksum of the original client design tokens, not an API credential"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^(mockup/client/assets/tokens\.css|frontend/public/client/assets/tokens\.css)$''']
+regexes = ['''^\s*tokens-sha256: d3dd9c20854c589d00eb49ef634c90448fcbf174dd7e096f87ebacedeb7d74f1\s*$''']

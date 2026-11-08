@@ -1,0 +1,26 @@
+export const landingText = {
+  en: {
+    title: 'VPN and proxy.', highlight: 'Traffic under control.',
+    description: 'A tool for private networking. Configure application routes, manage DNS and inspect connections — with a clear view of where your traffic goes.',
+    download: 'Download client', invite: 'Downloads are available by invitation',
+    boundary: 'Your account provides client downloads.', boundaryMore: 'Profiles and connections are configured in Private Gateway.',
+    preview: 'Interactive preview', device: 'Client preview device', computer: 'Computer', phone: 'Phone',
+    frameTitle: 'Interactive Private Gateway Client preview. Connections and data are simulated.',
+    hint: 'Try the shield, server selector or a status tile.', hintMore: 'This is a client preview. It does not connect to a VPN.',
+    protocols: 'Client protocols', signIn: 'Sign in', account: 'Account', invitation: 'Invitation',
+    footer: 'Private Gateway Web · Client downloads', home: 'Home', loading: 'Loading…',
+    retry: 'Try again', noPage: 'Page not found', backHome: 'Back to home',
+  },
+  ru: {
+    title: 'VPN и прокси.', highlight: 'Контроль трафика.',
+    description: 'Инструмент для приватной работы в сети. Настраивайте маршруты приложений, контролируйте DNS и проверяйте соединения — с пониманием того, куда передаются ваши данные.',
+    download: 'Скачать клиент', invite: 'Доступ к скачиванию — по приглашению',
+    boundary: 'Кабинет сайта — для скачивания клиента.', boundaryMore: 'Профили и подключения настраиваются в Private Gateway.',
+    preview: 'Кликабельный макет', device: 'Вид демонстрации клиента', computer: 'Компьютер', phone: 'Телефон',
+    frameTitle: 'Интерактивный макет Private Gateway Client. Подключение и данные демонстрационные.',
+    hint: 'Нажмите щит, «Сменить» или плитку проверки.', hintMore: 'Это макет клиента. VPN не подключается.',
+    protocols: 'Протоколы клиента', signIn: 'Войти', account: 'Кабинет', invitation: 'Приглашение',
+    footer: 'Private Gateway Web · Скачивание клиента', home: 'Главная', loading: 'Загрузка…',
+    retry: 'Повторить', noPage: 'Страница не найдена', backHome: 'На главную',
+  },
+};

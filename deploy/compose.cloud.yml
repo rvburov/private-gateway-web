@@ -1,0 +1,17 @@
+# Необязательная CA managed cloud: только BuildKit mount, не слой образа.
+services:
+  api:
+    build:
+      secrets: [proxy_ca]
+  migrate:
+    build:
+      secrets: [proxy_ca]
+  cli:
+    build:
+      secrets: [proxy_ca]
+  web:
+    build:
+      secrets: [proxy_ca]
+secrets:
+  proxy_ca:
+    file: ${PGWEB_BUILD_CA_FILE:?set path to the managed environment CA bundle}

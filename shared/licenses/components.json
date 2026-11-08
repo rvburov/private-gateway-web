@@ -1,0 +1,2923 @@
+{
+  "note": "Generated from installed locked packages; original license texts retained. Optional packages for other operating systems are recorded in package-lock.json.",
+  "components": [
+    {
+      "ecosystem": "npm",
+      "name": "@adobe/css-tools",
+      "version": "4.5.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "TJ Holowaychuk <tj@vision-media.ca>",
+      "source": "https://github.com/adobe/css-tools.git",
+      "registry": "https://www.npmjs.com/package/@adobe/css-tools",
+      "texts": [
+        "texts/_adobe_css-tools-4.5.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@asamuzakjp/css-color",
+      "version": "7.2.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "asamuzaK",
+      "source": "git+https://github.com/asamuzaK/cssColor.git",
+      "registry": "https://www.npmjs.com/package/@asamuzakjp/css-color",
+      "texts": [
+        "texts/_asamuzakjp_css-color-7.2.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@asamuzakjp/dom-selector",
+      "version": "9.2.4",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "asamuzaK",
+      "source": "git+https://github.com/asamuzaK/domSelector.git",
+      "registry": "https://www.npmjs.com/package/@asamuzakjp/dom-selector",
+      "texts": [
+        "texts/_asamuzakjp_dom-selector-9.2.4/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@babel/code-frame",
+      "version": "7.29.7",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "The Babel Team (https://babel.dev/team)",
+      "source": "https://github.com/babel/babel.git",
+      "registry": "https://www.npmjs.com/package/@babel/code-frame",
+      "texts": [
+        "texts/_babel_code-frame-7.29.7/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@babel/helper-validator-identifier",
+      "version": "7.29.7",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "The Babel Team (https://babel.dev/team)",
+      "source": "https://github.com/babel/babel.git",
+      "registry": "https://www.npmjs.com/package/@babel/helper-validator-identifier",
+      "texts": [
+        "texts/_babel_helper-validator-identifier-7.29.7/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@babel/runtime",
+      "version": "7.29.13",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "The Babel Team (https://babel.dev/team)",
+      "source": "https://github.com/babel/babel.git",
+      "registry": "https://www.npmjs.com/package/@babel/runtime",
+      "texts": [
+        "texts/_babel_runtime-7.29.13/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@bramus/specificity",
+      "version": "2.4.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Bramus Van Damme",
+        "email": "bramus@bram.us",
+        "twitter": "@bramus",
+        "web": "https://www.bram.us/"
+      },
+      "source": "git+https://github.com/bramus/specificity.git",
+      "registry": "https://www.npmjs.com/package/@bramus/specificity",
+      "texts": [
+        "texts/_bramus_specificity-2.4.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/color-helpers",
+      "version": "6.1.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT-0",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/color-helpers",
+      "texts": [
+        "texts/_csstools_color-helpers-6.1.2/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/css-calc",
+      "version": "3.4.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/css-calc",
+      "texts": [
+        "texts/_csstools_css-calc-3.4.3/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/css-color-parser",
+      "version": "4.2.7",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/css-color-parser",
+      "texts": [
+        "texts/_csstools_css-color-parser-4.2.7/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/css-parser-algorithms",
+      "version": "4.0.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/css-parser-algorithms",
+      "texts": [
+        "texts/_csstools_css-parser-algorithms-4.0.2/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/css-syntax-patches-for-csstree",
+      "version": "1.1.16",
+      "direct": false,
+      "development": true,
+      "license": "MIT-0",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/css-syntax-patches-for-csstree",
+      "texts": [
+        "texts/_csstools_css-syntax-patches-for-csstree-1.1.16/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@csstools/css-tokenizer",
+      "version": "4.0.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Antonio Laguna",
+          "email": "antonio@laguna.es",
+          "url": "https://antonio.laguna.es"
+        },
+        {
+          "name": "Romain Menke",
+          "email": "romainmenke@gmail.com"
+        }
+      ],
+      "source": "git+https://github.com/csstools/postcss-plugins.git",
+      "registry": "https://www.npmjs.com/package/@csstools/css-tokenizer",
+      "texts": [
+        "texts/_csstools_css-tokenizer-4.0.2/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@exodus/bytes",
+      "version": "1.16.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Exodus Movement, Inc.",
+      "source": "git+https://github.com/ExodusOSS/bytes.git",
+      "registry": "https://www.npmjs.com/package/@exodus/bytes",
+      "texts": [
+        "texts/_exodus_bytes-1.16.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@jridgewell/resolve-uri",
+      "version": "3.1.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Justin Ridgewell <justin@ridgewell.name>",
+      "source": "https://github.com/jridgewell/resolve-uri",
+      "registry": "https://www.npmjs.com/package/@jridgewell/resolve-uri",
+      "texts": [
+        "texts/_jridgewell_resolve-uri-3.1.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@jridgewell/sourcemap-codec",
+      "version": "1.6.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Justin Ridgewell <justin@ridgewell.name>",
+      "source": "git+https://github.com/jridgewell/sourcemaps.git",
+      "registry": "https://www.npmjs.com/package/@jridgewell/sourcemap-codec",
+      "texts": [
+        "texts/_jridgewell_sourcemap-codec-1.6.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@jridgewell/trace-mapping",
+      "version": "0.3.31",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Justin Ridgewell <justin@ridgewell.name>",
+      "source": "git+https://github.com/jridgewell/sourcemaps.git",
+      "registry": "https://www.npmjs.com/package/@jridgewell/trace-mapping",
+      "texts": [
+        "texts/_jridgewell_trace-mapping-0.3.31/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@oxc-project/types",
+      "version": "0.156.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Boshen and oxc contributors",
+      "source": "git+https://github.com/oxc-project/oxc.git",
+      "registry": "https://www.npmjs.com/package/@oxc-project/types",
+      "texts": [
+        "texts/_oxc-project_types-0.156.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@playwright/test",
+      "version": "1.56.1",
+      "direct": true,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": {
+        "name": "Microsoft Corporation"
+      },
+      "source": "git+https://github.com/microsoft/playwright.git",
+      "registry": "https://www.npmjs.com/package/@playwright/test",
+      "texts": [
+        "texts/_playwright_test-1.56.1/LICENSE",
+        "texts/_playwright_test-1.56.1/NOTICE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@remix-run/route-pattern",
+      "version": "0.22.1",
+      "direct": false,
+      "development": false,
+      "license": "MIT",
+      "author": [
+        "Michael Jackson <mjijackson@gmail.com>",
+        "Pedro Cattori <pcattori@gmail.com>"
+      ],
+      "source": "git+https://github.com/remix-run/remix.git",
+      "registry": "https://www.npmjs.com/package/@remix-run/route-pattern",
+      "texts": [
+        "texts/_remix-run_route-pattern-0.22.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.2.16",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/rolldown/rolldown.git",
+      "registry": "https://www.npmjs.com/package/@rolldown/binding-linux-x64-gnu",
+      "texts": []
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.2.16",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/rolldown/rolldown.git",
+      "registry": "https://www.npmjs.com/package/@rolldown/binding-linux-x64-musl",
+      "texts": []
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@rolldown/pluginutils",
+      "version": "1.0.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/rolldown/plugins.git",
+      "registry": "https://www.npmjs.com/package/@rolldown/pluginutils",
+      "texts": [
+        "texts/_rolldown_pluginutils-1.0.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@testing-library/dom",
+      "version": "10.4.2",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Kent C. Dodds <me@kentcdodds.com> (https://kentcdodds.com)",
+      "source": "https://github.com/testing-library/dom-testing-library",
+      "registry": "https://www.npmjs.com/package/@testing-library/dom",
+      "texts": [
+        "texts/_testing-library_dom-10.4.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@testing-library/jest-dom",
+      "version": "7.0.1",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Ernesto Garcia <gnapse@gmail.com> (http://gnapse.github.io)",
+      "source": "https://github.com/testing-library/jest-dom",
+      "registry": "https://www.npmjs.com/package/@testing-library/jest-dom",
+      "texts": [
+        "texts/_testing-library_jest-dom-7.0.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dom-accessibility-api",
+      "version": "0.6.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/eps1lon/dom-accessibility-api.git",
+      "registry": "https://www.npmjs.com/package/dom-accessibility-api",
+      "texts": [
+        "texts/dom-accessibility-api-0.6.3/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@testing-library/react",
+      "version": "16.3.3",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Kent C. Dodds <me@kentcdodds.com> (https://kentcdodds.com)",
+      "source": "https://github.com/testing-library/react-testing-library",
+      "registry": "https://www.npmjs.com/package/@testing-library/react",
+      "texts": [
+        "texts/_testing-library_react-16.3.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@testing-library/user-event",
+      "version": "14.6.7",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Giorgio Polvara <polvara@gmail.com>",
+      "source": "https://github.com/testing-library/user-event",
+      "registry": "https://www.npmjs.com/package/@testing-library/user-event",
+      "texts": [
+        "texts/_testing-library_user-event-14.6.7/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/aria-query",
+      "version": "5.0.4",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Sebastian Silbermann",
+          "githubUsername": "eps1lon",
+          "url": "https://github.com/eps1lon"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/aria-query",
+      "texts": [
+        "texts/_types_aria-query-5.0.4/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/chai",
+      "version": "5.2.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Bart van der Schoor",
+          "githubUsername": "Bartvds",
+          "url": "https://github.com/Bartvds"
+        },
+        {
+          "name": "Andrew Brown",
+          "githubUsername": "AGBrown",
+          "url": "https://github.com/AGBrown"
+        },
+        {
+          "name": "Olivier Chevet",
+          "githubUsername": "olivr70",
+          "url": "https://github.com/olivr70"
+        },
+        {
+          "name": "Matt Wistrand",
+          "githubUsername": "mwistrand",
+          "url": "https://github.com/mwistrand"
+        },
+        {
+          "name": "Shaun Luttin",
+          "githubUsername": "shaunluttin",
+          "url": "https://github.com/shaunluttin"
+        },
+        {
+          "name": "Satana Charuwichitratana",
+          "githubUsername": "micksatana",
+          "url": "https://github.com/micksatana"
+        },
+        {
+          "name": "Erik Schierboom",
+          "githubUsername": "ErikSchierboom",
+          "url": "https://github.com/ErikSchierboom"
+        },
+        {
+          "name": "Bogdan Paranytsia",
+          "githubUsername": "bparan",
+          "url": "https://github.com/bparan"
+        },
+        {
+          "name": "CXuesong",
+          "githubUsername": "CXuesong",
+          "url": "https://github.com/CXuesong"
+        },
+        {
+          "name": "Joey Kilpatrick",
+          "githubUsername": "joeykilpatrick",
+          "url": "https://github.com/joeykilpatrick"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/chai",
+      "texts": [
+        "texts/_types_chai-5.2.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/deep-eql",
+      "version": "4.0.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Rodrigo Pietnechuk",
+          "githubUsername": "ghnoob",
+          "url": "https://github.com/ghnoob"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/deep-eql",
+      "texts": [
+        "texts/_types_deep-eql-4.0.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/estree",
+      "version": "1.0.10",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "RReverser",
+          "githubUsername": "RReverser",
+          "url": "https://github.com/RReverser"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/estree",
+      "texts": [
+        "texts/_types_estree-1.0.10/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/node",
+      "version": "24.19.1",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Microsoft TypeScript",
+          "githubUsername": "Microsoft",
+          "url": "https://github.com/Microsoft"
+        },
+        {
+          "name": "Alberto Schiabel",
+          "githubUsername": "jkomyno",
+          "url": "https://github.com/jkomyno"
+        },
+        {
+          "name": "Andrew Makarov",
+          "githubUsername": "r3nya",
+          "url": "https://github.com/r3nya"
+        },
+        {
+          "name": "Benjamin Toueg",
+          "githubUsername": "btoueg",
+          "url": "https://github.com/btoueg"
+        },
+        {
+          "name": "David Junger",
+          "githubUsername": "touffy",
+          "url": "https://github.com/touffy"
+        },
+        {
+          "name": "Mohsen Azimi",
+          "githubUsername": "mohsen1",
+          "url": "https://github.com/mohsen1"
+        },
+        {
+          "name": "Nikita Galkin",
+          "githubUsername": "galkin",
+          "url": "https://github.com/galkin"
+        },
+        {
+          "name": "Sebastian Silbermann",
+          "githubUsername": "eps1lon",
+          "url": "https://github.com/eps1lon"
+        },
+        {
+          "name": "Wilco Bakker",
+          "githubUsername": "WilcoBakker",
+          "url": "https://github.com/WilcoBakker"
+        },
+        {
+          "name": "Trivikram Kamat",
+          "githubUsername": "trivikr",
+          "url": "https://github.com/trivikr"
+        },
+        {
+          "name": "Junxiao Shi",
+          "githubUsername": "yoursunny",
+          "url": "https://github.com/yoursunny"
+        },
+        {
+          "name": "ExE Boss",
+          "githubUsername": "ExE-Boss",
+          "url": "https://github.com/ExE-Boss"
+        },
+        {
+          "name": "Piotr Błażejewicz",
+          "githubUsername": "peterblazejewicz",
+          "url": "https://github.com/peterblazejewicz"
+        },
+        {
+          "name": "Anna Henningsen",
+          "githubUsername": "addaleax",
+          "url": "https://github.com/addaleax"
+        },
+        {
+          "name": "NodeJS Contributors",
+          "githubUsername": "NodeJS",
+          "url": "https://github.com/NodeJS"
+        },
+        {
+          "name": "Linus Unnebäck",
+          "githubUsername": "LinusU",
+          "url": "https://github.com/LinusU"
+        },
+        {
+          "name": "wafuwafu13",
+          "githubUsername": "wafuwafu13",
+          "url": "https://github.com/wafuwafu13"
+        },
+        {
+          "name": "Matteo Collina",
+          "githubUsername": "mcollina",
+          "url": "https://github.com/mcollina"
+        },
+        {
+          "name": "Dmitry Semigradsky",
+          "githubUsername": "Semigradsky",
+          "url": "https://github.com/Semigradsky"
+        },
+        {
+          "name": "René",
+          "githubUsername": "Renegade334",
+          "url": "https://github.com/Renegade334"
+        },
+        {
+          "name": "Yagiz Nizipli",
+          "githubUsername": "anonrig",
+          "url": "https://github.com/anonrig"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/node",
+      "texts": [
+        "texts/_types_node-24.19.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/react",
+      "version": "19.3.0",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Asana",
+          "url": "https://asana.com"
+        },
+        {
+          "name": "AssureSign",
+          "url": "http://www.assuresign.com"
+        },
+        {
+          "name": "Microsoft",
+          "url": "https://microsoft.com"
+        },
+        {
+          "name": "John Reilly",
+          "githubUsername": "johnnyreilly",
+          "url": "https://github.com/johnnyreilly"
+        },
+        {
+          "name": "Benoit Benezech",
+          "githubUsername": "bbenezech",
+          "url": "https://github.com/bbenezech"
+        },
+        {
+          "name": "Patricio Zavolinsky",
+          "githubUsername": "pzavolinsky",
+          "url": "https://github.com/pzavolinsky"
+        },
+        {
+          "name": "Eric Anderson",
+          "githubUsername": "ericanderson",
+          "url": "https://github.com/ericanderson"
+        },
+        {
+          "name": "Dovydas Navickas",
+          "githubUsername": "DovydasNavickas",
+          "url": "https://github.com/DovydasNavickas"
+        },
+        {
+          "name": "Josh Rutherford",
+          "githubUsername": "theruther4d",
+          "url": "https://github.com/theruther4d"
+        },
+        {
+          "name": "Guilherme Hübner",
+          "githubUsername": "guilhermehubner",
+          "url": "https://github.com/guilhermehubner"
+        },
+        {
+          "name": "Ferdy Budhidharma",
+          "githubUsername": "ferdaber",
+          "url": "https://github.com/ferdaber"
+        },
+        {
+          "name": "Johann Rakotoharisoa",
+          "githubUsername": "jrakotoharisoa",
+          "url": "https://github.com/jrakotoharisoa"
+        },
+        {
+          "name": "Olivier Pascal",
+          "githubUsername": "pascaloliv",
+          "url": "https://github.com/pascaloliv"
+        },
+        {
+          "name": "Martin Hochel",
+          "githubUsername": "hotell",
+          "url": "https://github.com/hotell"
+        },
+        {
+          "name": "Frank Li",
+          "githubUsername": "franklixuefei",
+          "url": "https://github.com/franklixuefei"
+        },
+        {
+          "name": "Jessica Franco",
+          "githubUsername": "Jessidhia",
+          "url": "https://github.com/Jessidhia"
+        },
+        {
+          "name": "Saransh Kataria",
+          "githubUsername": "saranshkataria",
+          "url": "https://github.com/saranshkataria"
+        },
+        {
+          "name": "Kanitkorn Sujautra",
+          "githubUsername": "lukyth",
+          "url": "https://github.com/lukyth"
+        },
+        {
+          "name": "Sebastian Silbermann",
+          "githubUsername": "eps1lon",
+          "url": "https://github.com/eps1lon"
+        },
+        {
+          "name": "Kyle Scully",
+          "githubUsername": "zieka",
+          "url": "https://github.com/zieka"
+        },
+        {
+          "name": "Cong Zhang",
+          "githubUsername": "dancerphil",
+          "url": "https://github.com/dancerphil"
+        },
+        {
+          "name": "Dimitri Mitropoulos",
+          "githubUsername": "dimitropoulos",
+          "url": "https://github.com/dimitropoulos"
+        },
+        {
+          "name": "JongChan Choi",
+          "githubUsername": "disjukr",
+          "url": "https://github.com/disjukr"
+        },
+        {
+          "name": "Victor Magalhães",
+          "githubUsername": "vhfmag",
+          "url": "https://github.com/vhfmag"
+        },
+        {
+          "name": "Priyanshu Rav",
+          "githubUsername": "priyanshurav",
+          "url": "https://github.com/priyanshurav"
+        },
+        {
+          "name": "Dmitry Semigradsky",
+          "githubUsername": "Semigradsky",
+          "url": "https://github.com/Semigradsky"
+        },
+        {
+          "name": "Matt Pocock",
+          "githubUsername": "mattpocock",
+          "url": "https://github.com/mattpocock"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/react",
+      "texts": [
+        "texts/_types_react-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@types/react-dom",
+      "version": "19.3.0",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Asana",
+          "url": "https://asana.com"
+        },
+        {
+          "name": "AssureSign",
+          "url": "http://www.assuresign.com"
+        },
+        {
+          "name": "Microsoft",
+          "url": "https://microsoft.com"
+        },
+        {
+          "name": "MartynasZilinskas",
+          "githubUsername": "MartynasZilinskas",
+          "url": "https://github.com/MartynasZilinskas"
+        },
+        {
+          "name": "Josh Rutherford",
+          "githubUsername": "theruther4d",
+          "url": "https://github.com/theruther4d"
+        },
+        {
+          "name": "Jessica Franco",
+          "githubUsername": "Jessidhia",
+          "url": "https://github.com/Jessidhia"
+        },
+        {
+          "name": "Sebastian Silbermann",
+          "githubUsername": "eps1lon",
+          "url": "https://github.com/eps1lon"
+        }
+      ],
+      "source": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "registry": "https://www.npmjs.com/package/@types/react-dom",
+      "texts": [
+        "texts/_types_react-dom-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@typescript/typescript-linux-x64",
+      "version": "7.0.2",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "Microsoft Corp.",
+      "source": "https://github.com/microsoft/TypeScript.git",
+      "registry": "https://www.npmjs.com/package/@typescript/typescript-linux-x64",
+      "texts": [
+        "texts/_typescript_typescript-linux-x64-7.0.2/LICENSE",
+        "texts/_typescript_typescript-linux-x64-7.0.2/NOTICE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@vitejs/plugin-react",
+      "version": "6.1.2",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Evan You",
+      "source": "git+https://github.com/vitejs/vite-plugin-react.git",
+      "registry": "https://www.npmjs.com/package/@vitejs/plugin-react",
+      "texts": [
+        "texts/_vitejs_plugin-react-6.1.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@vitest/mocker",
+      "version": "5.0.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/vitest-dev/vitest.git",
+      "registry": "https://www.npmjs.com/package/@vitest/mocker",
+      "texts": [
+        "texts/_vitest_mocker-5.0.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@vitest/spy",
+      "version": "5.0.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/vitest-dev/vitest.git",
+      "registry": "https://www.npmjs.com/package/@vitest/spy",
+      "texts": [
+        "texts/_vitest_spy-5.0.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-regex",
+      "version": "5.0.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Sindre Sorhus",
+        "email": "sindresorhus@gmail.com",
+        "url": "sindresorhus.com"
+      },
+      "source": "chalk/ansi-regex",
+      "registry": "https://www.npmjs.com/package/ansi-regex",
+      "texts": [
+        "texts/ansi-regex-5.0.1/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "ansi-styles",
+      "version": "5.2.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Sindre Sorhus",
+        "email": "sindresorhus@gmail.com",
+        "url": "https://sindresorhus.com"
+      },
+      "source": "chalk/ansi-styles",
+      "registry": "https://www.npmjs.com/package/ansi-styles",
+      "texts": [
+        "texts/ansi-styles-5.2.0/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "aria-query",
+      "version": "5.3.0",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "Jesse Beach <splendidnoise@gmail.com>",
+      "source": "git+https://github.com/A11yance/aria-query.git",
+      "registry": "https://www.npmjs.com/package/aria-query",
+      "texts": [
+        "texts/aria-query-5.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "assertion-error",
+      "version": "2.0.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Jake Luer <jake@qualiancy.com> (http://qualiancy.com)",
+      "source": "git@github.com:chaijs/assertion-error.git",
+      "registry": "https://www.npmjs.com/package/assertion-error",
+      "texts": [
+        "texts/assertion-error-2.0.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "bidi-js",
+      "version": "1.1.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Jason Johnston",
+      "source": "https://github.com/lojjic/bidi-js.git",
+      "registry": "https://www.npmjs.com/package/bidi-js",
+      "texts": [
+        "texts/bidi-js-1.1.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "chai",
+      "version": "6.3.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Jake Luer <jake@alogicalparadox.com>",
+      "source": "https://github.com/chaijs/chai",
+      "registry": "https://www.npmjs.com/package/chai",
+      "texts": [
+        "texts/chai-6.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "cookie-es",
+      "version": "3.1.1",
+      "direct": false,
+      "development": false,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "unjs/cookie-es",
+      "registry": "https://www.npmjs.com/package/cookie-es",
+      "texts": [
+        "texts/cookie-es-3.1.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "css-tree",
+      "version": "3.2.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Roman Dvornov <rdvornov@gmail.com> (https://github.com/lahmatiy)",
+      "source": "csstree/csstree",
+      "registry": "https://www.npmjs.com/package/css-tree",
+      "texts": [
+        "texts/css-tree-3.2.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "css.escape",
+      "version": "1.5.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Mathias Bynens",
+        "url": "https://mathiasbynens.be/"
+      },
+      "source": "https://github.com/mathiasbynens/CSS.escape.git",
+      "registry": "https://www.npmjs.com/package/css.escape",
+      "texts": [
+        "texts/css.escape-1.5.1/LICENSE-MIT.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "csstype",
+      "version": "3.2.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Fredrik Nicol <fredrik.nicol@gmail.com>",
+      "source": "https://github.com/frenic/csstype",
+      "registry": "https://www.npmjs.com/package/csstype",
+      "texts": [
+        "texts/csstype-3.2.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "data-urls",
+      "version": "8.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+      "source": "git+https://github.com/jsdom/data-urls.git",
+      "registry": "https://www.npmjs.com/package/data-urls",
+      "texts": [
+        "texts/data-urls-8.0.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "decimal.js",
+      "version": "10.6.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Michael Mclaughlin",
+        "email": "M8ch88l@gmail.com"
+      },
+      "source": "https://github.com/MikeMcl/decimal.js.git",
+      "registry": "https://www.npmjs.com/package/decimal.js",
+      "texts": [
+        "texts/decimal.js-10.6.0/LICENCE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dequal",
+      "version": "2.0.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Luke Edwards",
+        "email": "luke.edwards05@gmail.com",
+        "url": "https://lukeed.com"
+      },
+      "source": "lukeed/dequal",
+      "registry": "https://www.npmjs.com/package/dequal",
+      "texts": [
+        "texts/dequal-2.0.3/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "detect-libc",
+      "version": "2.1.2",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "Lovell Fuller <npm@lovell.info>",
+      "source": "git://github.com/lovell/detect-libc.git",
+      "registry": "https://www.npmjs.com/package/detect-libc",
+      "texts": [
+        "texts/detect-libc-2.1.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dom-accessibility-api",
+      "version": "0.5.16",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/eps1lon/dom-accessibility-api.git",
+      "registry": "https://www.npmjs.com/package/dom-accessibility-api",
+      "texts": [
+        "texts/dom-accessibility-api-0.5.16/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "entities",
+      "version": "9.0.0",
+      "direct": false,
+      "development": true,
+      "license": "BSD-2-Clause",
+      "author": "Felix Boehm <me@feedic.com>",
+      "source": "https://github.com/fb55/entities.git",
+      "registry": "https://www.npmjs.com/package/entities",
+      "texts": [
+        "texts/entities-9.0.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Guy Bedford",
+      "source": "git+https://github.com/guybedford/es-module-lexer.git",
+      "registry": "https://www.npmjs.com/package/es-module-lexer",
+      "texts": [
+        "texts/es-module-lexer-2.3.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "estree-walker",
+      "version": "3.0.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Rich Harris",
+      "source": "https://github.com/Rich-Harris/estree-walker",
+      "registry": "https://www.npmjs.com/package/estree-walker",
+      "texts": [
+        "texts/estree-walker-3.0.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "expect-type",
+      "version": "1.4.0",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "See license text",
+      "source": "https://github.com/mmkal/expect-type.git",
+      "registry": "https://www.npmjs.com/package/expect-type",
+      "texts": [
+        "texts/expect-type-1.4.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "fdir",
+      "version": "6.5.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "thecodrr <thecodrr@protonmail.com>",
+      "source": "git+https://github.com/thecodrr/fdir.git",
+      "registry": "https://www.npmjs.com/package/fdir",
+      "texts": [
+        "texts/fdir-6.5.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "html-encoding-sniffer",
+      "version": "7.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+      "source": "git+https://github.com/jsdom/html-encoding-sniffer.git",
+      "registry": "https://www.npmjs.com/package/html-encoding-sniffer",
+      "texts": [
+        "texts/html-encoding-sniffer-7.0.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "indent-string",
+      "version": "4.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Sindre Sorhus",
+        "email": "sindresorhus@gmail.com",
+        "url": "sindresorhus.com"
+      },
+      "source": "sindresorhus/indent-string",
+      "registry": "https://www.npmjs.com/package/indent-string",
+      "texts": [
+        "texts/indent-string-4.0.0/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "is-potential-custom-element-name",
+      "version": "1.0.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Mathias Bynens",
+        "url": "https://mathiasbynens.be/"
+      },
+      "source": "https://github.com/mathiasbynens/is-potential-custom-element-name.git",
+      "registry": "https://www.npmjs.com/package/is-potential-custom-element-name",
+      "texts": [
+        "texts/is-potential-custom-element-name-1.0.1/LICENSE-MIT.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "js-tokens",
+      "version": "4.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Simon Lydell",
+      "source": "lydell/js-tokens",
+      "registry": "https://www.npmjs.com/package/js-tokens",
+      "texts": [
+        "texts/js-tokens-4.0.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "jsdom",
+      "version": "30.1.2",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/jsdom/jsdom.git",
+      "registry": "https://www.npmjs.com/package/jsdom",
+      "texts": [
+        "texts/jsdom-30.1.2/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lightningcss",
+      "version": "1.33.0",
+      "direct": false,
+      "development": true,
+      "license": "MPL-2.0",
+      "author": "See license text",
+      "source": "https://github.com/parcel-bundler/lightningcss.git",
+      "registry": "https://www.npmjs.com/package/lightningcss",
+      "texts": [
+        "texts/lightningcss-1.33.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lightningcss-linux-x64-gnu",
+      "version": "1.33.0",
+      "direct": false,
+      "development": true,
+      "license": "MPL-2.0",
+      "author": "See license text",
+      "source": "https://github.com/parcel-bundler/lightningcss.git",
+      "registry": "https://www.npmjs.com/package/lightningcss-linux-x64-gnu",
+      "texts": [
+        "texts/lightningcss-linux-x64-gnu-1.33.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.33.0",
+      "direct": false,
+      "development": true,
+      "license": "MPL-2.0",
+      "author": "See license text",
+      "source": "https://github.com/parcel-bundler/lightningcss.git",
+      "registry": "https://www.npmjs.com/package/lightningcss-linux-x64-musl",
+      "texts": [
+        "texts/lightningcss-linux-x64-musl-1.33.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lru-cache",
+      "version": "11.5.3",
+      "direct": false,
+      "development": true,
+      "license": "BlueOak-1.0.0",
+      "author": "Isaac Z. Schlueter <i@izs.me>",
+      "source": "git+ssh://git@github.com/isaacs/node-lru-cache.git",
+      "registry": "https://www.npmjs.com/package/lru-cache",
+      "texts": [
+        "texts/lru-cache-11.5.3/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "lz-string",
+      "version": "1.5.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "pieroxy <pieroxy@pieroxy.net>",
+      "source": "https://github.com/pieroxy/lz-string.git",
+      "registry": "https://www.npmjs.com/package/lz-string",
+      "texts": [
+        "texts/lz-string-1.5.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "magic-string",
+      "version": "1.4.5",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Rich Harris",
+      "source": "git+https://github.com/Rich-Harris/magic-string.git",
+      "registry": "https://www.npmjs.com/package/magic-string",
+      "texts": [
+        "texts/magic-string-1.4.5/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "mdn-data",
+      "version": "2.27.1",
+      "direct": false,
+      "development": true,
+      "license": "CC0-1.0",
+      "author": "Mozilla Developer Network",
+      "source": "https://github.com/mdn/data.git",
+      "registry": "https://www.npmjs.com/package/mdn-data",
+      "texts": [
+        "texts/mdn-data-2.27.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "min-indent",
+      "version": "1.0.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "James Kyle",
+        "email": "me@thejameskyle.com",
+        "url": "thejameskyle.com"
+      },
+      "source": "https://github.com/thejameskyle/min-indent",
+      "registry": "https://www.npmjs.com/package/min-indent",
+      "texts": [
+        "texts/min-indent-1.0.1/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "nanoid",
+      "version": "3.3.20",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Andrey Sitnik <andrey@sitnik.ru>",
+      "source": "ai/nanoid",
+      "registry": "https://www.npmjs.com/package/nanoid",
+      "texts": [
+        "texts/nanoid-3.3.20/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "obug",
+      "version": "2.2.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Kevin Deng <sxzz@sxzz.moe>",
+      "source": "git+https://github.com/sxzz/obug.git",
+      "registry": "https://www.npmjs.com/package/obug",
+      "texts": [
+        "texts/obug-2.2.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "parse5",
+      "version": "8.1.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Ivan Nikulin <ifaaan@gmail.com> (https://github.com/inikulin)",
+      "source": "git://github.com/inikulin/parse5.git",
+      "registry": "https://www.npmjs.com/package/parse5",
+      "texts": [
+        "texts/parse5-8.1.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "direct": false,
+      "development": true,
+      "license": "ISC",
+      "author": "Alexey Raspopov",
+      "source": "alexeyraspopov/picocolors",
+      "registry": "https://www.npmjs.com/package/picocolors",
+      "texts": [
+        "texts/picocolors-1.1.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "picomatch",
+      "version": "4.0.7",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+      "source": "micromatch/picomatch",
+      "registry": "https://www.npmjs.com/package/picomatch",
+      "texts": [
+        "texts/picomatch-4.0.7/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "playwright",
+      "version": "1.56.1",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": {
+        "name": "Microsoft Corporation"
+      },
+      "source": "git+https://github.com/microsoft/playwright.git",
+      "registry": "https://www.npmjs.com/package/playwright",
+      "texts": [
+        "texts/playwright-1.56.1/LICENSE",
+        "texts/playwright-1.56.1/NOTICE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "playwright-core",
+      "version": "1.56.1",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": {
+        "name": "Microsoft Corporation"
+      },
+      "source": "git+https://github.com/microsoft/playwright.git",
+      "registry": "https://www.npmjs.com/package/playwright-core",
+      "texts": [
+        "texts/playwright-core-1.56.1/LICENSE",
+        "texts/playwright-core-1.56.1/NOTICE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "postcss",
+      "version": "8.5.32",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Andrey Sitnik <andrey@sitnik.es>",
+      "source": "postcss/postcss",
+      "registry": "https://www.npmjs.com/package/postcss",
+      "texts": [
+        "texts/postcss-8.5.32/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "pretty-format",
+      "version": "27.5.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "James Kyle <me@thejameskyle.com>",
+      "source": "https://github.com/facebook/jest.git",
+      "registry": "https://www.npmjs.com/package/pretty-format",
+      "texts": [
+        "texts/pretty-format-27.5.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "punycode",
+      "version": "2.3.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Mathias Bynens",
+        "url": "https://mathiasbynens.be/"
+      },
+      "source": "https://github.com/mathiasbynens/punycode.js.git",
+      "registry": "https://www.npmjs.com/package/punycode",
+      "texts": [
+        "texts/punycode-2.3.1/LICENSE-MIT.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react",
+      "version": "19.3.0",
+      "direct": true,
+      "development": false,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/react/react.git",
+      "registry": "https://www.npmjs.com/package/react",
+      "texts": [
+        "texts/react-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-dom",
+      "version": "19.3.0",
+      "direct": true,
+      "development": false,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/react/react.git",
+      "registry": "https://www.npmjs.com/package/react-dom",
+      "texts": [
+        "texts/react-dom-19.3.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-is",
+      "version": "17.0.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/facebook/react.git",
+      "registry": "https://www.npmjs.com/package/react-is",
+      "texts": [
+        "texts/react-is-17.0.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "react-router",
+      "version": "8.4.0",
+      "direct": true,
+      "development": false,
+      "license": "MIT",
+      "author": "Remix Software <hello@remix.run>",
+      "source": "https://github.com/remix-run/react-router",
+      "registry": "https://www.npmjs.com/package/react-router",
+      "texts": [
+        "texts/react-router-8.4.0/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "redent",
+      "version": "3.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Sindre Sorhus",
+        "email": "sindresorhus@gmail.com",
+        "url": "sindresorhus.com"
+      },
+      "source": "sindresorhus/redent",
+      "registry": "https://www.npmjs.com/package/redent",
+      "texts": [
+        "texts/redent-3.0.0/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "require-from-string",
+      "version": "2.0.2",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Vsevolod Strukchinsky",
+        "email": "floatdrop@gmail.com",
+        "url": "github.com/floatdrop"
+      },
+      "source": "floatdrop/require-from-string",
+      "registry": "https://www.npmjs.com/package/require-from-string",
+      "texts": [
+        "texts/require-from-string-2.0.2/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "rolldown",
+      "version": "1.2.16",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/rolldown/rolldown.git",
+      "registry": "https://www.npmjs.com/package/rolldown",
+      "texts": [
+        "texts/rolldown-1.2.16/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "saxes",
+      "version": "6.0.0",
+      "direct": false,
+      "development": true,
+      "license": "ISC",
+      "author": "Louis-Dominique Dubeau <ldd@lddubeau.com>",
+      "source": "https://github.com/lddubeau/saxes.git",
+      "registry": "https://www.npmjs.com/package/saxes",
+      "texts": []
+    },
+    {
+      "ecosystem": "npm",
+      "name": "scheduler",
+      "version": "0.28.0",
+      "direct": false,
+      "development": false,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "https://github.com/react/react.git",
+      "registry": "https://www.npmjs.com/package/scheduler",
+      "texts": [
+        "texts/scheduler-0.28.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "source-map-js",
+      "version": "1.2.2",
+      "direct": false,
+      "development": true,
+      "license": "BSD-3-Clause",
+      "author": "Valentin 7rulnik Semirulnik <v7rulnik@gmail.com>",
+      "source": "7rulnik/source-map-js",
+      "registry": "https://www.npmjs.com/package/source-map-js",
+      "texts": [
+        "texts/source-map-js-1.2.2/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "std-env",
+      "version": "4.3.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "unjs/std-env",
+      "registry": "https://www.npmjs.com/package/std-env",
+      "texts": [
+        "texts/std-env-4.3.0/LICENCE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "strip-indent",
+      "version": "3.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Sindre Sorhus",
+        "email": "sindresorhus@gmail.com",
+        "url": "sindresorhus.com"
+      },
+      "source": "sindresorhus/strip-indent",
+      "registry": "https://www.npmjs.com/package/strip-indent",
+      "texts": [
+        "texts/strip-indent-3.0.0/license"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tinybench",
+      "version": "6.2.3",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "tinylibs/tinybench",
+      "registry": "https://www.npmjs.com/package/tinybench",
+      "texts": [
+        "texts/tinybench-6.2.3/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "James Garbutt (https://github.com/43081j)",
+      "source": "git+https://github.com/tinylibs/tinyexec.git",
+      "registry": "https://www.npmjs.com/package/tinyexec",
+      "texts": [
+        "texts/tinyexec-1.3.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tinyglobby",
+      "version": "0.2.17",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Superchupu",
+      "source": "git+https://github.com/SuperchupuDev/tinyglobby.git",
+      "registry": "https://www.npmjs.com/package/tinyglobby",
+      "texts": [
+        "texts/tinyglobby-0.2.17/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tldts",
+      "version": "7.4.19",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Rémi Berson"
+      },
+      "source": "git+ssh://git@github.com/remusao/tldts.git",
+      "registry": "https://www.npmjs.com/package/tldts",
+      "texts": [
+        "texts/tldts-7.4.19/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tldts-core",
+      "version": "7.4.20",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": {
+        "name": "Rémi Berson"
+      },
+      "source": "git+ssh://git@github.com/remusao/tldts.git",
+      "registry": "https://www.npmjs.com/package/tldts-core",
+      "texts": [
+        "texts/tldts-core-7.4.20/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tough-cookie",
+      "version": "6.1.0",
+      "direct": false,
+      "development": true,
+      "license": "BSD-3-Clause",
+      "author": {
+        "name": "Jeremy Stashewsky",
+        "email": "jstash@gmail.com",
+        "website": "https://github.com/stash"
+      },
+      "source": "git://github.com/salesforce/tough-cookie.git",
+      "registry": "https://www.npmjs.com/package/tough-cookie",
+      "texts": [
+        "texts/tough-cookie-6.1.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tr46",
+      "version": "7.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Sebastian Mayr <npm@smayr.name>",
+      "source": "git+https://github.com/jsdom/tr46.git",
+      "registry": "https://www.npmjs.com/package/tr46",
+      "texts": [
+        "texts/tr46-7.0.0/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "typescript",
+      "version": "7.0.2",
+      "direct": true,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "Microsoft Corp.",
+      "source": "https://github.com/microsoft/TypeScript.git",
+      "registry": "https://www.npmjs.com/package/typescript",
+      "texts": [
+        "texts/typescript-7.0.2/LICENSE",
+        "texts/typescript-7.0.2/NOTICE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "undici",
+      "version": "8.12.4",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Daniele Belardi",
+          "url": "https://github.com/dnlup",
+          "author": true
+        },
+        {
+          "name": "Ethan Arrowood",
+          "url": "https://github.com/ethan-arrowood",
+          "author": true
+        },
+        {
+          "name": "Matteo Collina",
+          "url": "https://github.com/mcollina",
+          "author": true
+        },
+        {
+          "name": "Matthew Aitken",
+          "url": "https://github.com/KhafraDev",
+          "author": true
+        },
+        {
+          "name": "Robert Nagy",
+          "url": "https://github.com/ronag",
+          "author": true
+        },
+        {
+          "name": "Szymon Marczak",
+          "url": "https://github.com/szmarczak",
+          "author": true
+        },
+        {
+          "name": "Tomas Della Vedova",
+          "url": "https://github.com/delvedor",
+          "author": true
+        }
+      ],
+      "source": "git+https://github.com/nodejs/undici.git",
+      "registry": "https://www.npmjs.com/package/undici",
+      "texts": [
+        "texts/undici-8.12.4/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "undici-types",
+      "version": "7.24.6",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": [
+        {
+          "name": "Daniele Belardi",
+          "url": "https://github.com/dnlup",
+          "author": true
+        },
+        {
+          "name": "Ethan Arrowood",
+          "url": "https://github.com/ethan-arrowood",
+          "author": true
+        },
+        {
+          "name": "Matteo Collina",
+          "url": "https://github.com/mcollina",
+          "author": true
+        },
+        {
+          "name": "Matthew Aitken",
+          "url": "https://github.com/KhafraDev",
+          "author": true
+        },
+        {
+          "name": "Robert Nagy",
+          "url": "https://github.com/ronag",
+          "author": true
+        },
+        {
+          "name": "Szymon Marczak",
+          "url": "https://github.com/szmarczak",
+          "author": true
+        },
+        {
+          "name": "Tomas Della Vedova",
+          "url": "https://github.com/delvedor",
+          "author": true
+        }
+      ],
+      "source": "git+https://github.com/nodejs/undici.git",
+      "registry": "https://www.npmjs.com/package/undici-types",
+      "texts": [
+        "texts/undici-types-7.24.6/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "vite",
+      "version": "8.3.3",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Evan You",
+      "source": "git+https://github.com/vitejs/vite.git",
+      "registry": "https://www.npmjs.com/package/vite",
+      "texts": [
+        "texts/vite-8.3.3/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "vitest",
+      "version": "5.0.3",
+      "direct": true,
+      "development": true,
+      "license": "MIT",
+      "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+      "source": "git+https://github.com/vitest-dev/vitest.git",
+      "registry": "https://www.npmjs.com/package/vitest",
+      "texts": [
+        "texts/vitest-5.0.3/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "w3c-xmlserializer",
+      "version": "6.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "See license text",
+      "source": "git+https://github.com/jsdom/w3c-xmlserializer.git",
+      "registry": "https://www.npmjs.com/package/w3c-xmlserializer",
+      "texts": [
+        "texts/w3c-xmlserializer-6.0.0/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "webidl-conversions",
+      "version": "8.0.1",
+      "direct": false,
+      "development": true,
+      "license": "BSD-2-Clause",
+      "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+      "source": "git+https://github.com/jsdom/webidl-conversions.git",
+      "registry": "https://www.npmjs.com/package/webidl-conversions",
+      "texts": [
+        "texts/webidl-conversions-8.0.1/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "whatwg-mimetype",
+      "version": "5.0.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+      "source": "jsdom/whatwg-mimetype",
+      "registry": "https://www.npmjs.com/package/whatwg-mimetype",
+      "texts": [
+        "texts/whatwg-mimetype-5.0.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "whatwg-url",
+      "version": "17.3.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Sebastian Mayr <github@smayr.name>",
+      "source": "git+https://github.com/jsdom/whatwg-url.git",
+      "registry": "https://www.npmjs.com/package/whatwg-url",
+      "texts": [
+        "texts/whatwg-url-17.3.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "why-is-node-running",
+      "version": "3.2.1",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Mathias Buus (@mafintosh)",
+      "source": "https://github.com/mafintosh/why-is-node-running.git",
+      "registry": "https://www.npmjs.com/package/why-is-node-running",
+      "texts": [
+        "texts/why-is-node-running-3.2.1/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "xml-name-validator",
+      "version": "5.0.0",
+      "direct": false,
+      "development": true,
+      "license": "Apache-2.0",
+      "author": "Domenic Denicola <d@domenic.me> (https://domenic.me/)",
+      "source": "jsdom/xml-name-validator",
+      "registry": "https://www.npmjs.com/package/xml-name-validator",
+      "texts": [
+        "texts/xml-name-validator-5.0.0/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "name": "xmlchars",
+      "version": "2.2.0",
+      "direct": false,
+      "development": true,
+      "license": "MIT",
+      "author": "Louis-Dominique Dubeau <ldd@lddubeau.com>",
+      "source": "https://github.com/lddubeau/xmlchars.git",
+      "registry": "https://www.npmjs.com/package/xmlchars",
+      "texts": [
+        "texts/xmlchars-2.2.0/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "alembic",
+      "version": "1.20.0",
+      "direct": true,
+      "license": "MIT",
+      "author": "Mike Bayer <mike_mp@zzzcomputing.com>",
+      "source": [
+        "Homepage, https://alembic.sqlalchemy.org",
+        "Documentation, https://alembic.sqlalchemy.org/en/latest/",
+        "Changelog, https://alembic.sqlalchemy.org/en/latest/changelog.html",
+        "Source, https://github.com/sqlalchemy/alembic/",
+        "Issue Tracker, https://github.com/sqlalchemy/alembic/issues/"
+      ],
+      "registry": "https://pypi.org/project/alembic/",
+      "texts": [
+        "texts/alembic-1.20.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "direct": false,
+      "license": "MIT",
+      "author": "=?utf-8?q?Sebasti=C3=A1n_Ram=C3=ADrez?= <tiangolo@gmail.com>",
+      "source": [
+        "Homepage, https://github.com/fastapi/annotated-doc",
+        "Documentation, https://github.com/fastapi/annotated-doc",
+        "Repository, https://github.com/fastapi/annotated-doc",
+        "Issues, https://github.com/fastapi/annotated-doc/issues",
+        "Changelog, https://github.com/fastapi/annotated-doc/release-notes.md"
+      ],
+      "registry": "https://pypi.org/project/annotated-doc/",
+      "texts": [
+        "texts/annotated-doc-0.0.5/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>, Samuel Colvin <s@muelcolvin.com>, Zac Hatfield-Dodds <zac@zhd.dev>",
+      "source": [
+        "Homepage, https://github.com/annotated-types/annotated-types",
+        "Source, https://github.com/annotated-types/annotated-types",
+        "Changelog, https://github.com/annotated-types/annotated-types/releases"
+      ],
+      "registry": "https://pypi.org/project/annotated-types/",
+      "texts": [
+        "texts/annotated-types-0.8.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "anyio",
+      "version": "4.15.1",
+      "direct": true,
+      "license": "MIT",
+      "author": "Alex Grönholm <alex.gronholm@nextday.fi>",
+      "source": [
+        "Documentation, https://anyio.readthedocs.io/en/latest/",
+        "Changelog, https://anyio.readthedocs.io/en/stable/versionhistory.html",
+        "Source code, https://github.com/agronholm/anyio",
+        "Issue tracker, https://github.com/agronholm/anyio/issues"
+      ],
+      "registry": "https://pypi.org/project/anyio/",
+      "texts": [
+        "texts/anyio-4.15.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "argon2-cffi",
+      "version": "25.1.0",
+      "direct": true,
+      "license": "MIT",
+      "author": "Hynek Schlawack <hs@ox.cx>",
+      "source": [
+        "Documentation, https://argon2-cffi.readthedocs.io/",
+        "Changelog, https://github.com/hynek/argon2-cffi/blob/main/CHANGELOG.md",
+        "GitHub, https://github.com/hynek/argon2-cffi",
+        "Funding, https://github.com/sponsors/hynek",
+        "Tidelift, https://tidelift.com/?utm_source=lifter&utm_medium=referral&utm_campaign=hynek"
+      ],
+      "registry": "https://pypi.org/project/argon2-cffi/",
+      "texts": [
+        "texts/argon2-cffi-25.1.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "argon2-cffi-bindings",
+      "version": "26.1.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "Hynek Schlawack <hs@ox.cx>",
+      "source": [
+        "Tidelift, https://tidelift.com/?utm_source=lifter&utm_medium=referral&utm_campaign=hynek",
+        "Changelog, https://github.com/hynek/argon2-cffi-bindings/blob/main/CHANGELOG.md",
+        "GitHub, https://github.com/hynek/argon2-cffi-bindings",
+        "Funding, https://github.com/sponsors/hynek"
+      ],
+      "registry": "https://pypi.org/project/argon2-cffi-bindings/",
+      "texts": [
+        "texts/argon2-cffi-bindings-26.1.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "asyncpg",
+      "version": "0.32.0",
+      "direct": true,
+      "license": "Apache-2.0",
+      "author": "MagicStack Inc <hello@magic.io>",
+      "source": [
+        "github, https://github.com/MagicStack/asyncpg"
+      ],
+      "registry": "https://pypi.org/project/asyncpg/",
+      "texts": [
+        "texts/asyncpg-0.32.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "certifi",
+      "version": "2026.10.18",
+      "direct": false,
+      "license": "MPL-2.0",
+      "author": "me@kennethreitz.com",
+      "source": [
+        "Source, https://github.com/certifi/python-certifi"
+      ],
+      "registry": "https://pypi.org/project/certifi/",
+      "texts": [
+        "texts/certifi-2026.10.18/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "cffi",
+      "version": "2.1.1",
+      "direct": false,
+      "license": "MIT-0",
+      "author": "Armin Rigo, Maciej Fijalkowski",
+      "source": [
+        "Documentation, https://cffi.readthedocs.io/",
+        "Changelog, https://cffi.readthedocs.io/en/latest/whatsnew.html",
+        "Download, https://github.com/python-cffi/cffi/releases",
+        "Contact, https://groups.google.com/forum/#!forum/python-cffi",
+        "Source Code, https://github.com/python-cffi/cffi",
+        "Issue Tracker, https://github.com/python-cffi/cffi/issues"
+      ],
+      "registry": "https://pypi.org/project/cffi/",
+      "texts": [
+        "texts/cffi-2.1.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "click",
+      "version": "8.5.0",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "See license text",
+      "source": [
+        "Changes, https://click.palletsprojects.com/page/changes/",
+        "Chat, https://discord.gg/pallets",
+        "Documentation, https://click.palletsprojects.com/",
+        "Donate, https://palletsprojects.com/donate",
+        "Source, https://github.com/pallets/click/"
+      ],
+      "registry": "https://pypi.org/project/click/",
+      "texts": [
+        "texts/click-8.5.0/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "cryptography",
+      "version": "50.0.2",
+      "direct": true,
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "author": "The Python Cryptographic Authority and individual contributors <cryptography-dev@python.org>",
+      "source": [
+        "changelog, https://cryptography.io/en/latest/changelog/",
+        "documentation, https://cryptography.io/",
+        "homepage, https://github.com/pyca/cryptography",
+        "issues, https://github.com/pyca/cryptography/issues",
+        "source, https://github.com/pyca/cryptography/"
+      ],
+      "registry": "https://pypi.org/project/cryptography/",
+      "texts": [
+        "texts/cryptography-50.0.2/licenses/LICENSE",
+        "texts/cryptography-50.0.2/licenses/LICENSE.APACHE",
+        "texts/cryptography-50.0.2/licenses/LICENSE.BSD"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "fastapi",
+      "version": "0.143.0",
+      "direct": true,
+      "license": "MIT",
+      "author": "Sebastián Ramírez <tiangolo@gmail.com>",
+      "source": [
+        "Homepage, https://github.com/fastapi/fastapi",
+        "Documentation, https://fastapi.tiangolo.com/",
+        "Repository, https://github.com/fastapi/fastapi",
+        "Issues, https://github.com/fastapi/fastapi/issues",
+        "Changelog, https://fastapi.tiangolo.com/release-notes/"
+      ],
+      "registry": "https://pypi.org/project/fastapi/",
+      "texts": [
+        "texts/fastapi-0.143.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "greenlet",
+      "version": "3.5.6",
+      "direct": false,
+      "license": "MIT AND PSF-2.0",
+      "author": "Alexey Borzenkov <snaury@gmail.com>",
+      "source": [
+        "Homepage, https://greenlet.readthedocs.io",
+        "Documentation, https://greenlet.readthedocs.io",
+        "Repository, https://github.com/python-greenlet/greenlet",
+        "Issues, https://github.com/python-greenlet/greenlet/issues",
+        "Changelog, https://greenlet.readthedocs.io/en/latest/changes.html"
+      ],
+      "registry": "https://pypi.org/project/greenlet/",
+      "texts": [
+        "texts/greenlet-3.5.6/licenses/LICENSE",
+        "texts/greenlet-3.5.6/licenses/LICENSE.PSF"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "h11",
+      "version": "0.16.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "njs@pobox.com",
+      "source": "https://github.com/python-hyper/h11",
+      "registry": "https://pypi.org/project/h11/",
+      "texts": [
+        "texts/h11-0.16.0/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "httpcore",
+      "version": "1.0.9",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Tom Christie <tom@tomchristie.com>",
+      "source": [
+        "Documentation, https://www.encode.io/httpcore",
+        "Homepage, https://www.encode.io/httpcore/",
+        "Source, https://github.com/encode/httpcore"
+      ],
+      "registry": "https://pypi.org/project/httpcore/",
+      "texts": [
+        "texts/httpcore-1.0.9/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "httptools",
+      "version": "0.8.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "Yury Selivanov <yury@magic.io>",
+      "source": [
+        "Homepage, https://github.com/MagicStack/httptools"
+      ],
+      "registry": "https://pypi.org/project/httptools/",
+      "texts": [
+        "texts/httptools-0.8.0/licenses/LICENSE",
+        "texts/httptools-0.8.0/licenses/vendor/http-parser/LICENSE-MIT",
+        "texts/httptools-0.8.0/licenses/vendor/llhttp/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "httpx",
+      "version": "0.28.1",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Tom Christie <tom@tomchristie.com>",
+      "source": [
+        "Changelog, https://github.com/encode/httpx/blob/master/CHANGELOG.md",
+        "Documentation, https://www.python-httpx.org",
+        "Homepage, https://github.com/encode/httpx",
+        "Source, https://github.com/encode/httpx"
+      ],
+      "registry": "https://pypi.org/project/httpx/",
+      "texts": [
+        "texts/httpx-0.28.1/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "idna",
+      "version": "3.20",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Kim Davies <kim+pypi@gumleaf.org>",
+      "source": [
+        "Changelog, https://github.com/kjd/idna/blob/master/HISTORY.md",
+        "Issue tracker, https://github.com/kjd/idna/issues",
+        "Source, https://github.com/kjd/idna"
+      ],
+      "registry": "https://pypi.org/project/idna/",
+      "texts": [
+        "texts/idna-3.20/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "direct": false,
+      "license": "MIT",
+      "author": "Ronny Pfannschmidt <opensource@ronnypfannschmidt.de>, Holger Krekel <holger.krekel@gmail.com>",
+      "source": [
+        "Homepage, https://github.com/pytest-dev/iniconfig"
+      ],
+      "registry": "https://pypi.org/project/iniconfig/",
+      "texts": [
+        "texts/iniconfig-2.3.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "Mako",
+      "version": "1.4.3",
+      "direct": false,
+      "license": "MIT",
+      "author": "Mike Bayer <mike@zzzcomputing.com>",
+      "source": [
+        "Homepage, https://www.makotemplates.org/",
+        "Documentation, https://docs.makotemplates.org",
+        "Issue Tracker, https://github.com/sqlalchemy/mako"
+      ],
+      "registry": "https://pypi.org/project/Mako/",
+      "texts": [
+        "texts/Mako-1.4.3/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "MarkupSafe",
+      "version": "3.0.4",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "See license text",
+      "source": [
+        "Donate, https://palletsprojects.com/donate",
+        "Documentation, https://markupsafe.palletsprojects.com/",
+        "Changes, https://markupsafe.palletsprojects.com/page/changes/",
+        "Source, https://github.com/pallets/markupsafe/",
+        "Chat, https://discord.gg/pallets"
+      ],
+      "registry": "https://pypi.org/project/MarkupSafe/",
+      "texts": [
+        "texts/MarkupSafe-3.0.4/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "direct": false,
+      "license": "Apache-2.0",
+      "author": "OpenTelemetry Authors <cncf-opentelemetry-contributors@lists.cncf.io>",
+      "source": [
+        "Homepage, https://github.com/open-telemetry/opentelemetry-python/tree/main/opentelemetry-api",
+        "Repository, https://github.com/open-telemetry/opentelemetry-python"
+      ],
+      "registry": "https://pypi.org/project/opentelemetry-api/",
+      "texts": [
+        "texts/opentelemetry-api-1.45.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "packaging",
+      "version": "26.3",
+      "direct": false,
+      "license": "Apache-2.0 OR BSD-2-Clause",
+      "author": "Donald Stufft <donald@stufft.io>",
+      "source": [
+        "Documentation, https://packaging.pypa.io/",
+        "Source, https://github.com/pypa/packaging"
+      ],
+      "registry": "https://pypi.org/project/packaging/",
+      "texts": [
+        "texts/packaging-26.3/licenses/LICENSE",
+        "texts/packaging-26.3/licenses/LICENSE.APACHE",
+        "texts/packaging-26.3/licenses/LICENSE.BSD"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pluggy",
+      "version": "1.6.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "Holger Krekel <holger@merlinux.eu>",
+      "source": null,
+      "registry": "https://pypi.org/project/pluggy/",
+      "texts": [
+        "texts/pluggy-1.6.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pycparser",
+      "version": "3.1",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Eli Bendersky <eliben@gmail.com>",
+      "source": [
+        "Homepage, https://github.com/eliben/pycparser"
+      ],
+      "registry": "https://pypi.org/project/pycparser/",
+      "texts": [
+        "texts/pycparser-3.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pydantic",
+      "version": "2.13.5",
+      "direct": true,
+      "license": "MIT",
+      "author": "Samuel Colvin <s@muelcolvin.com>, Eric Jolibois <em.jolibois@gmail.com>, Hasan Ramezani <hasan.r67@gmail.com>, Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>, Terrence Dorsey <terry@pydantic.dev>, David Montague <david@pydantic.dev>, Serge Matveenko <lig@countzero.co>, Marcelo Trylesinski <marcelotryle@gmail.com>, Sydney Runkle <sydneymarierunkle@gmail.com>, David Hewitt <mail@davidhewitt.dev>, Alex Hall <alex.mojaki@gmail.com>, Victorien Plot <contact@vctrn.dev>",
+      "source": [
+        "Homepage, https://github.com/pydantic/pydantic",
+        "Documentation, https://docs.pydantic.dev",
+        "Funding, https://github.com/sponsors/samuelcolvin",
+        "Source, https://github.com/pydantic/pydantic",
+        "Changelog, https://docs.pydantic.dev/latest/changelog/"
+      ],
+      "registry": "https://pypi.org/project/pydantic/",
+      "texts": [
+        "texts/pydantic-2.13.5/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pydantic_core",
+      "version": "2.46.5",
+      "direct": false,
+      "license": "MIT",
+      "author": "Samuel Colvin <s@muelcolvin.com>, Adrian Garcia Badaracco <1755071+adriangb@users.noreply.github.com>, David Montague <david@pydantic.dev>, David Hewitt <mail@davidhewitt.dev>, Sydney Runkle <sydneymarierunkle@gmail.com>, Victorien Plot <contact@vctrn.dev>",
+      "source": [
+        "Funding, https://github.com/sponsors/samuelcolvin",
+        "Homepage, https://github.com/pydantic",
+        "Source, https://github.com/pydantic/pydantic/tree/main/pydantic-core"
+      ],
+      "registry": "https://pypi.org/project/pydantic_core/",
+      "texts": [
+        "texts/pydantic_core-2.46.5/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pydantic-settings",
+      "version": "2.15.0",
+      "direct": true,
+      "license": "MIT",
+      "author": "Samuel Colvin <s@muelcolvin.com>, Eric Jolibois <em.jolibois@gmail.com>, Hasan Ramezani <hasan.r67@gmail.com>",
+      "source": [
+        "Homepage, https://github.com/pydantic/pydantic-settings",
+        "Funding, https://github.com/sponsors/samuelcolvin",
+        "Source, https://github.com/pydantic/pydantic-settings",
+        "Changelog, https://github.com/pydantic/pydantic-settings/releases",
+        "Documentation, https://docs.pydantic.dev/dev-v2/concepts/pydantic_settings/"
+      ],
+      "registry": "https://pypi.org/project/pydantic-settings/",
+      "texts": [
+        "texts/pydantic-settings-2.15.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "Pygments",
+      "version": "2.21.0",
+      "direct": false,
+      "license": "BSD-2-Clause",
+      "author": "Georg Brandl <georg@python.org>",
+      "source": [
+        "Homepage, https://pygments.org",
+        "Documentation, https://pygments.org/docs",
+        "Source, https://github.com/pygments/pygments",
+        "Bug Tracker, https://github.com/pygments/pygments/issues",
+        "Changelog, https://github.com/pygments/pygments/blob/master/CHANGES"
+      ],
+      "registry": "https://pypi.org/project/Pygments/",
+      "texts": [
+        "texts/Pygments-2.21.0/licenses/AUTHORS",
+        "texts/Pygments-2.21.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "PyOTP",
+      "version": "2.10.0",
+      "direct": true,
+      "license": "MIT",
+      "author": "kislyuk@gmail.com",
+      "source": [
+        "Homepage, https://github.com/pyauth/pyotp",
+        "Documentation, https://github.com/pyauth/pyotp",
+        "Source Code, https://github.com/pyauth/pyotp",
+        "Issue Tracker, https://github.com/pyauth/pyotp/issues",
+        "Change Log, https://github.com/pyauth/pyotp/blob/main/Changes.rst"
+      ],
+      "registry": "https://pypi.org/project/PyOTP/",
+      "texts": [
+        "texts/PyOTP-2.10.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pytest",
+      "version": "9.1.1",
+      "direct": false,
+      "license": "MIT",
+      "author": "Brianna Laugher, Bruno Oliveira, Floris Bruynooghe, Freya Bruhin, Holger Krekel, Others (See AUTHORS), Ronny Pfannschmidt",
+      "source": [
+        "Changelog, https://docs.pytest.org/en/stable/changelog.html",
+        "Contact, https://docs.pytest.org/en/stable/contact.html",
+        "Funding, https://docs.pytest.org/en/stable/sponsor.html",
+        "Homepage, https://docs.pytest.org/en/latest/",
+        "Source, https://github.com/pytest-dev/pytest",
+        "Tracker, https://github.com/pytest-dev/pytest/issues"
+      ],
+      "registry": "https://pypi.org/project/pytest/",
+      "texts": [
+        "texts/pytest-9.1.1/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pytest-asyncio",
+      "version": "1.4.0",
+      "direct": false,
+      "license": "Apache-2.0",
+      "author": "Tin Tvrtković <tinchester@gmail.com>",
+      "source": [
+        "Bug Tracker, https://github.com/pytest-dev/pytest-asyncio/issues",
+        "Changelog, https://pytest-asyncio.readthedocs.io/en/stable/reference/changelog.html",
+        "Documentation, https://pytest-asyncio.readthedocs.io",
+        "Homepage, https://github.com/pytest-dev/pytest-asyncio",
+        "Source Code, https://github.com/pytest-dev/pytest-asyncio"
+      ],
+      "registry": "https://pypi.org/project/pytest-asyncio/",
+      "texts": [
+        "texts/pytest-asyncio-1.4.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Saurabh Kumar <me+github@saurabh-kumar.com>",
+      "source": [
+        "Source, https://github.com/theskumar/python-dotenv"
+      ],
+      "registry": "https://pypi.org/project/python-dotenv/",
+      "texts": [
+        "texts/python-dotenv-1.2.4/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "direct": false,
+      "license": "MIT",
+      "author": "xi@resolvent.net",
+      "source": [
+        "Bug Tracker, https://github.com/yaml/pyyaml/issues",
+        "CI, https://github.com/yaml/pyyaml/actions",
+        "Documentation, https://pyyaml.org/wiki/PyYAMLDocumentation",
+        "Mailing lists, http://lists.sourceforge.net/lists/listinfo/yaml-core",
+        "Source Code, https://github.com/yaml/pyyaml"
+      ],
+      "registry": "https://pypi.org/project/PyYAML/",
+      "texts": [
+        "texts/PyYAML-6.0.3/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "ruff",
+      "version": "0.16.10",
+      "direct": false,
+      "license": "MIT",
+      "author": "\"Astral Software Inc.\" <hey@astral.sh>",
+      "source": [
+        "Changelog, https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md",
+        "Documentation, https://docs.astral.sh/ruff/",
+        "Repository, https://github.com/astral-sh/ruff"
+      ],
+      "registry": "https://pypi.org/project/ruff/",
+      "texts": [
+        "texts/ruff-0.16.10/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "segno",
+      "version": "1.6.6",
+      "direct": true,
+      "license": [
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Multimedia :: Graphics",
+        "Topic :: Printing",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Utilities"
+      ],
+      "author": "Lars Heuer <heuer@semagia.com>",
+      "source": [
+        "Changes, https://github.com/heuer/segno/blob/master/CHANGES.rst",
+        "Documentation, https://segno.readthedocs.io/",
+        "Homepage, https://github.com/heuer/segno/",
+        "Issue tracker, https://github.com/heuer/segno/issues/"
+      ],
+      "registry": "https://pypi.org/project/segno/",
+      "texts": [
+        "texts/segno-1.6.6/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "SQLAlchemy",
+      "version": "2.1.4",
+      "direct": true,
+      "license": "MIT",
+      "author": "Mike Bayer <mike_mp@zzzcomputing.com>",
+      "source": [
+        "Homepage, https://www.sqlalchemy.org",
+        "Documentation, https://docs.sqlalchemy.org",
+        "Changelog, https://docs.sqlalchemy.org/latest/changelog/index.html",
+        "Source Code, https://github.com/sqlalchemy/sqlalchemy",
+        "Issue Tracker, https://github.com/sqlalchemy/sqlalchemy/issues",
+        "Discussions, https://github.com/sqlalchemy/sqlalchemy/discussions"
+      ],
+      "registry": "https://pypi.org/project/SQLAlchemy/",
+      "texts": [
+        "texts/SQLAlchemy-2.1.4/licenses/AUTHORS",
+        "texts/SQLAlchemy-2.1.4/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "starlette",
+      "version": "1.7.0",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Tom Christie <tom@tomchristie.com>",
+      "source": [
+        "Homepage, https://github.com/Kludex/starlette",
+        "Documentation, https://starlette.dev/",
+        "Changelog, https://starlette.dev/release-notes/",
+        "Funding, https://github.com/sponsors/Kludex",
+        "Source, https://github.com/Kludex/starlette"
+      ],
+      "registry": "https://pypi.org/project/starlette/",
+      "texts": [
+        "texts/starlette-1.7.0/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "direct": false,
+      "license": "PSF-2.0",
+      "author": "\"Guido van Rossum, Jukka Lehtosalo, Łukasz Langa, Michael Lee\" <levkivskyi@gmail.com>",
+      "source": [
+        "Bug Tracker, https://github.com/python/typing_extensions/issues",
+        "Changes, https://github.com/python/typing_extensions/blob/main/CHANGELOG.md",
+        "Documentation, https://typing-extensions.readthedocs.io/",
+        "Home, https://github.com/python/typing_extensions",
+        "Q & A, https://github.com/python/typing/discussions",
+        "Repository, https://github.com/python/typing_extensions"
+      ],
+      "registry": "https://pypi.org/project/typing_extensions/",
+      "texts": [
+        "texts/typing_extensions-4.16.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "direct": false,
+      "license": "MIT",
+      "author": "Victorien Plot <contact@vctrn.dev>",
+      "source": [
+        "Homepage, https://github.com/pydantic/typing-inspection",
+        "Documentation, https://pydantic.github.io/typing-inspection/dev/",
+        "Source, https://github.com/pydantic/typing-inspection",
+        "Changelog, https://github.com/pydantic/typing-inspection/blob/main/HISTORY.md"
+      ],
+      "registry": "https://pypi.org/project/typing-inspection/",
+      "texts": [
+        "texts/typing-inspection-0.4.4/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "direct": true,
+      "license": "BSD-3-Clause",
+      "author": "Tom Christie <tom@tomchristie.com>",
+      "source": [
+        "Changelog, https://uvicorn.dev/release-notes",
+        "Funding, https://github.com/sponsors/Kludex",
+        "Homepage, https://uvicorn.dev/",
+        "Source, https://github.com/Kludex/uvicorn"
+      ],
+      "registry": "https://pypi.org/project/uvicorn/",
+      "texts": [
+        "texts/uvicorn-0.54.0/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "uvloop",
+      "version": "0.23.0",
+      "direct": false,
+      "license": "MIT License",
+      "author": "Yury Selivanov <yury@magic.io>",
+      "source": [
+        "github, https://github.com/MagicStack/uvloop"
+      ],
+      "registry": "https://pypi.org/project/uvloop/",
+      "texts": [
+        "texts/uvloop-0.23.0/licenses/LICENSE-APACHE",
+        "texts/uvloop-0.23.0/licenses/LICENSE-MIT"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "watchfiles",
+      "version": "1.3.0",
+      "direct": false,
+      "license": "MIT",
+      "author": "Samuel Colvin <s@muelcolvin.com>",
+      "source": [
+        "Changelog, https://github.com/samuelcolvin/watchfiles/releases",
+        "Documentation, https://watchfiles.helpmanual.io",
+        "Funding, https://github.com/sponsors/samuelcolvin",
+        "Homepage, https://github.com/samuelcolvin/watchfiles",
+        "Source, https://github.com/samuelcolvin/watchfiles"
+      ],
+      "registry": "https://pypi.org/project/watchfiles/",
+      "texts": [
+        "texts/watchfiles-1.3.0/licenses/LICENSE"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "websockets",
+      "version": "17.2",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "author": "Aymeric Augustin <aymeric.augustin@m4x.org>",
+      "source": [
+        "Homepage, https://github.com/python-websockets/websockets",
+        "Changelog, https://websockets.readthedocs.io/en/stable/project/changelog.html",
+        "Documentation, https://websockets.readthedocs.io/",
+        "Funding, https://tidelift.com/subscription/pkg/pypi-websockets?utm_source=pypi-websockets&utm_medium=referral&utm_campaign=readme",
+        "Tracker, https://github.com/python-websockets/websockets/issues"
+      ],
+      "registry": "https://pypi.org/project/websockets/",
+      "texts": [
+        "texts/websockets-17.2/licenses/LICENSE"
+      ]
+    }
+  ]
+}

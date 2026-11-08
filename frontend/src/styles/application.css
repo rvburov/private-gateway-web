@@ -1,0 +1,7 @@
+/* Рабочая оболочка сохраняет размеры согласованной редакции 8. */
+.page-status{max-width:680px;margin:72px auto;padding:24px;display:grid;gap:20px;justify-items:start}
+.platforms img.platform-mark{width:18px;height:18px;flex:none}
+.auth-shell .language-switch{width:80px;height:36px}
+.auth-shell .appearance-button{width:36px;height:36px;border:1px solid var(--line-strong);border-radius:7px;background:var(--surface)}
+.auth-shell .language-switch button{min-height:28px}
+@media(max-width:760px){.platforms img.platform-mark{width:16px;height:16px}}

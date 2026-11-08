@@ -1,0 +1,34 @@
+.ac-nav-link{text-decoration:none}
+.ac-loading{padding:28px;color:var(--fg-3);font-size:13px}
+.ac-api-error{margin:16px 0;padding:16px;border:1px solid var(--bad);border-radius:8px;color:var(--bad);font-size:12px}
+.ac-api-error p{margin:0 0 10px}
+.ac-api-error p:last-child{margin-bottom:0}
+.ac-download-btn:disabled{cursor:not-allowed;opacity:.6}
+.ac-file-label{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;overflow-wrap:anywhere}
+.ac-file-label span+span::before{content:'·';margin-right:6px}
+.ac-checksum{width:100%;margin-top:15px;font-size:10px;color:var(--fg-3)}
+.ac-checksum summary{cursor:pointer}
+.ac-checksum code{display:block;overflow-wrap:anywhere;line-height:1.6;margin-top:8px}
+.ac-search-form{display:flex;gap:8px;align-items:center;min-width:0}
+.ac-search-form .ac-search{min-width:0;flex:1}
+.ac-pagination{display:flex;justify-content:center;gap:15px;align-items:center;margin-top:20px;font-size:11px;color:var(--fg-3)}
+.ac-pagination .btn{font-size:11px;min-height:36px;padding:8px 13px}
+.ac-pagination button:disabled{opacity:.45;cursor:not-allowed}
+.ac-member-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.ac-member-actions .btn{justify-content:flex-start;font-size:12px}
+.ac-secret-input{width:100%;min-width:0;background:none;border:0;color:var(--accent-ink);font:14px var(--font-mono);padding:8px 0}
+.ac-dialog .ac-code-box{gap:8px}
+.ac-session strong{overflow-wrap:anywhere}
+.ac-person>div{min-width:0}
+.ac-role-hint{margin-bottom:18px}
+.ac-otp-hint{font-size:10px!important;color:var(--fg-3)!important}
+.ac-dialog .ac-form-error{color:var(--bad)}
+@media(max-width:760px){
+ .ac-sidebar-bottom{display:flex;padding-top:8px;align-items:center;gap:8px}
+ .ac-sidebar-bottom .ac-session{display:none}
+ .ac-sidebar-bottom .ac-logout{width:auto;min-height:32px;padding:7px 10px;font-size:10px}
+ .ac-sidebar-bottom .ac-api-error{margin:0;padding:7px;font-size:10px}
+ .ac-search-form{width:100%}
+ .ac-search-form .ac-search{width:auto}
+ .ac-pagination{gap:10px;font-size:10px}
+}

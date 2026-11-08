@@ -1,0 +1,116 @@
+name: private-gateway-web
+
+x-api-env: &api-env
+  PGWEB_DATABASE_URL: postgresql+asyncpg://pgweb:${POSTGRES_PASSWORD:?run scripts/dev.sh init}@postgres:5432/pgweb
+  PGWEB_SECRET_KEY: ${PGWEB_SECRET_KEY:?run scripts/dev.sh init}
+  PGWEB_MASTER_KEYS: ${PGWEB_MASTER_KEYS:?run scripts/dev.sh init}
+  PGWEB_PUBLIC_ORIGIN: http://127.0.0.1:8080
+  PGWEB_COOKIE_SECURE: "false"
+  PGWEB_DOWNLOAD_ROOT: /downloads
+
+x-api: &api
+  image: private-gateway-web-api:local
+  build:
+    context: ..
+    dockerfile: deploy/api.Dockerfile
+  environment: *api-env
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  networks: [backend]
+  volumes:
+    - releases:/downloads:ro
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
+    environment:
+      POSTGRES_USER: pgweb
+      POSTGRES_DB: pgweb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run scripts/dev.sh init}
+    volumes:
+      - database:/var/lib/postgresql
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U pgweb -d pgweb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+    logging:
+      driver: local
+      options: {max-size: 10m, max-file: "3"}
+
+  migrate:
+    <<: *api
+    profiles: [tools]
+    command: [alembic, upgrade, head]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  # Только явная команда оператора может записать новый файл выпуска.
+  cli:
+    <<: *api
+    profiles: [tools]
+    entrypoint: [python, -m, app.cli]
+    command: [--help]
+    volumes:
+      - releases:/downloads
+      - ../.localdata/imports:/imports:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    <<: *api
+    command: [uvicorn, app.main:app, --host=0.0.0.0, --port=8000, --no-server-header, --no-access-log, --proxy-headers, --forwarded-allow-ips=172.31.247.0/28]
+    networks: [edge, backend]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    logging:
+      driver: local
+      options: {max-size: 10m, max-file: "3"}
+
+  web:
+    image: private-gateway-web-ui:local
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      # Прокси среды нужен для внешних адресов, а API находится в этой же сети Docker.
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},api,postgres
+      no_proxy: ${no_proxy:-localhost,127.0.0.1},api,postgres
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    read_only: true
+    tmpfs: [/data, /config, /tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [edge]
+    healthcheck:
+      test: [CMD, wget, -Y, "off", -q, --spider, http://127.0.0.1:8080/]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging:
+      driver: local
+      options: {max-size: 10m, max-file: "3"}
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.31.247.0/28
+  backend:
+    internal: true
+
+volumes:
+  database:
+  releases:

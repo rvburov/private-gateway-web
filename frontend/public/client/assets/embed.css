@@ -1,0 +1,67 @@
+/* Private Gateway Web: isolated presentation of the original client mockup.
+   Enabled only by embed.js when the URL explicitly contains embed=1. */
+html.pg-embed,
+html.pg-embed body {
+  margin: 0;
+  padding: 0 !important;
+  min-height: 0;
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+html.pg-embed body::-webkit-scrollbar { display: none; }
+html.pg-embed .pg-toolbar,
+html.pg-embed .pg-board-note,
+html.pg-embed .pg-frame-caption { display: none; }
+html.pg-embed .pg-screens {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 0;
+  padding: var(--pg-embed-viewport-inset, 0px);
+}
+html.pg-embed .pg-frame-wrap {
+  flex: none;
+  width: max-content;
+  gap: 0;
+  /* Transparent breathing room for the ORIGINAL 0 20px 50px shadow.
+     It paints 52px/32px/72px outside the native frame in Chromium;
+     the extra 2px protects its faint edge. The native phone bezel,
+     titlebar, border, corners and shadows are never overridden. */
+  padding: 34px 54px 74px;
+}
+html.pg-embed [data-reveal-scope] .country-glyph + .t-mono-large {
+  margin-inline-start: 8px;
+}
+/* Persistent preview: the painted device occupies the same 442×892 slot in
+   either mode. The original phone bezel is part of that size, not an extra
+   site frame. Navigation replaces app content without replacing these nodes. */
+html.pg-runtime .pg-frame-wrap {
+  width: 550px;
+  height: 1000px;
+  display: block;
+}
+html.pg-runtime .pg-device-slot { width: 442px; height: 892px; position: relative; }
+html.pg-runtime .pg-frame.is-window {
+  width: 442px;
+  height: 892px;
+}
+html.pg-runtime .pg-frame.is-window .pg-app { height: calc(100% - 32px); }
+html.pg-runtime .pg-frame[data-device="macos"].is-window .pg-app { height: calc(100% - 28px); }
+html.pg-runtime .pg-frame[data-device="linux"].is-window .pg-app { height: calc(100% - 38px); }
+html.pg-runtime .pg-frame.is-phone,
+html.pg-runtime .pg-frame[data-device="android"].is-phone {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 422px;
+  height: 872px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.pg-embed *, html.pg-embed *::before, html.pg-embed *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
