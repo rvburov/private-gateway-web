@@ -14,7 +14,7 @@ export function LandingPage() {
         <p className="hero-desc">{text.description}</p>
         <div className="hero-download"><div className="hero-actions"><Link className="btn primary lg" to={user ? '/downloads' : '/login'}><Icon name="download" /><span>{text.download}</span></Link></div>
           <p className="hero-note">{text.invite}</p>
-          <div className="platforms">{[['windows', 'Windows'], ['apple', 'macOS'], ['apple', 'iOS'], ['linux', 'Linux'], ['android', 'Android']].map(([icon, name]) => <span key={name}><Icon name={icon} />{name}</span>)}</div>
+          <div className="platforms">{[['windows', 'Windows'], ['apple', 'macOS'], ['apple', 'iOS'], ['linux', 'Linux'], ['android', 'Android']].map(([icon, name]) => <span key={name} data-platform={name.toLowerCase()}><Icon name={icon} />{name}</span>)}</div>
         </div>
         <p className="hero-boundary">{text.boundary}<br />{text.boundaryMore}</p>
       </div>

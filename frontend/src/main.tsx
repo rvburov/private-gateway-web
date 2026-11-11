@@ -1,6 +1,7 @@
 import './styles/style.css';
 import './styles/auth.css';
 import './styles/account.css';
+import './styles/spectrum.css';
 import './styles/application.css';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';

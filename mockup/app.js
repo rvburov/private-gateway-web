@@ -36,7 +36,7 @@
    <p class="hero-desc">Инструмент для приватной работы в сети. Настраивайте маршруты приложений, контролируйте DNS и проверяйте соединения — с пониманием того, куда передаются ваши данные.</p>
    <div class="hero-download"><div class="hero-actions"><a class="btn primary lg" href="#login">${PG.icon('download')}<span>Скачать клиент</span></a></div>
    <p class="hero-note">Доступ к скачиванию — по приглашению</p>
-   <div class="platforms"><span>${PG.icon('windows')} Windows</span><span>${PG.icon('apple')} macOS</span><span>${PG.icon('apple')} iOS</span><span>${PG.icon('linux')} Linux</span><span>${PG.icon('android')} Android</span></div>
+   <div class="platforms"><span data-platform="windows">${PG.icon('windows')} Windows</span><span data-platform="macos">${PG.icon('apple')} macOS</span><span data-platform="ios">${PG.icon('apple')} iOS</span><span data-platform="linux">${PG.icon('linux')} Linux</span><span data-platform="android">${PG.icon('android')} Android</span></div>
    </div><p class="hero-boundary">Кабинет сайта — для скачивания клиента.<br>Профили и подключения настраиваются в Private Gateway.</p>
   </div>
   <div class="hero-visual" id="try-client"><div class="demo-toolbar"><span class="eyebrow"><span class="dot"></span> Кликабельный макет</span><div class="device-switch segmented-control" role="group" aria-label="Вид демонстрации клиента"><button data-device="windows" aria-pressed="${device==='windows'}" title="Клиент на компьютере">${PG.icon('monitor')} Компьютер</button><button data-device="android" aria-pressed="${device==='android'}" title="Клиент на телефоне">${PG.icon('phone')} Телефон</button></div></div>

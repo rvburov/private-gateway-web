@@ -107,7 +107,7 @@ export function DownloadsPage() {
       <div className="ac-download-grid">{(['windows', 'macos', 'linux', 'android'] as const).map((platform) => {
         const item = find(platform), url = safeDownloadUrl(item);
         const descriptions = { windows: text.windowsLead, macos: text.macosLead, linux: text.linuxLead, android: text.androidLead };
-        return <article key={platform} className={`ac-download-card ${platform === 'windows' ? 'is-featured' : ''}`}>
+        return <article key={platform} className={`ac-download-card ${platform === 'windows' ? 'is-featured' : ''}`} data-platform={platform}>
           <div className="ac-os-icon"><Icon name={platformIcons[platform]} /></div>
           <div className="ac-download-title"><h2>{platformNames[platform]}</h2>{platform === 'windows' && <span className="ac-tag">{text.desktop}</span>}</div>
           <p>{descriptions[platform]}</p><div className="ac-platform-space" />
@@ -117,7 +117,7 @@ export function DownloadsPage() {
           {url && item.sha256 && <details className="ac-checksum"><summary>{text.checksum}</summary><code>{item.sha256}</code></details>}
         </article>;
       })}</div>
-      <div className="ac-ios card"><div className="ac-os-icon"><Icon name="apple" /></div><div><h3>{text.iosTitle}</h3><p>{text.iosLead}</p></div>
+      <div className="ac-ios card" data-platform="ios"><div className="ac-os-icon"><Icon name="apple" /></div><div><h3>{text.iosTitle}</h3><p>{text.iosLead}</p></div>
         {iosUrl ? <a className="btn" href={iosUrl} target="_blank" rel="noopener noreferrer">{text.appStore}</a> : <span className="ac-status is-muted">{text.appStorePending}</span>}
       </div>
       <div className="ac-download-foot"><Icon name="lock" /><p>{text.fileNote}</p></div>

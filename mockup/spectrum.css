@@ -1,0 +1,50 @@
+/* Оформление «Спектр» (выбрано пользователем 2026-11-11 из трех вариантов поверх v8).
+   Композиция, шрифты и тексты v8 не меняются. Цвета берутся из токенов в style.css:
+   --grad*, --panel*, --mesh, --glow и --os-* для платформ. Файл одинаковый в mockup/
+   и frontend/src/styles/ и подключается после account.css. */
+
+/* Цвет платформы задается атрибутом data-platform в разметке, а не порядком карточек. */
+[data-platform=windows]{--os:var(--os-windows)}
+[data-platform=macos]{--os:var(--os-macos)}
+[data-platform=ios]{--os:var(--os-ios)}
+[data-platform=linux]{--os:var(--os-linux)}
+[data-platform=android]{--os:var(--os-android)}
+
+/* Шапка и главная: цветные пятна на фоне, градиент во второй строке заголовка. */
+#site-header{background:var(--surface)}
+.landing{background:var(--mesh),var(--bg)}
+.landing .hero h1 span{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent}
+.landing .platforms span{padding:5px 10px 5px 8px;border-radius:999px;background:color-mix(in srgb,var(--os,var(--accent)) 13%,var(--surface));color:color-mix(in srgb,var(--os,var(--accent)) var(--os-text-mix),var(--fg))}
+.landing .hero-visual::before{content:"";position:absolute;z-index:-1;inset:12% 2% 4%;border-radius:40px;background:radial-gradient(closest-side,var(--glow),transparent);filter:blur(28px);pointer-events:none}
+
+/* Основная кнопка: градиент вместо плоской заливки, в том числе при наведении. */
+.btn.primary,.btn.primary:hover,.auth-shell .btn.primary,.auth-shell .btn.primary:hover{background:var(--grad);color:var(--grad-fg);border-color:transparent}
+.btn.primary{box-shadow:0 10px 24px -12px var(--grad-shadow)}
+.btn.primary:hover{filter:brightness(1.08)}
+
+/* Вход: градиентная панель со светлым текстом; логотип сохраняет фирменный цвет. */
+.auth-shell .login-brand,.auth-shell .login-m-hero{--fg:var(--panel-fg);--fg-2:var(--panel-fg-2);--fg-3:var(--panel-fg-3);--accent:var(--panel-fg);--accent-ink:var(--panel-fg);--accent-soft:var(--panel-tint);--surface:var(--panel-tint);--surface-2:var(--panel-tint);--line-strong:var(--panel-line);background:var(--panel);border-color:transparent;color:var(--fg)}
+.auth-shell .login-hero-h,.auth-shell .login-brandrow{color:var(--fg)}
+.auth-shell .auth-network-lines{stroke-opacity:.22}
+.auth-shell .auth-network-junctions{stroke-opacity:.3}
+.auth-shell .brand-mark{--accent:var(--brand);--accent-fg:var(--brand-fg);border-radius:9px;box-shadow:0 0 0 1px var(--panel-line)}
+
+/* Кабинет: градиентный баннер, активный пункт меню и цветные плитки платформ. */
+.ac-download-banner{background:var(--panel);border-color:transparent;color:var(--panel-fg)}
+.ac-download-banner :is(strong,p){color:inherit}
+.ac-download-banner p{color:var(--panel-fg-2)}
+.ac-download-banner .ac-banner-icon{background:var(--panel-tint);color:inherit}
+.ac-download-banner .ac-tag{background:var(--panel-tint);border-color:var(--panel-line);color:inherit}
+.ac-nav-link.is-active{background:var(--grad);color:var(--grad-fg);border-color:transparent}
+.ac-download-card[data-platform]{background:radial-gradient(70% 90% at 100% 0%,color-mix(in srgb,var(--os) 11%,transparent),transparent 70%),var(--surface)}
+.ac-download-card>.ac-os-icon{width:52px;height:52px;border-radius:15px;background:color-mix(in srgb,var(--os,var(--accent)) 14%,var(--surface));color:color-mix(in srgb,var(--os,var(--accent)) var(--os-icon-mix),var(--fg))}
+.ac-download-card>.ac-os-icon svg{width:26px;height:26px}
+.ac-ios[data-platform]>.ac-os-icon{color:color-mix(in srgb,var(--os) var(--os-icon-mix),var(--fg))}
+.ac-stats strong{color:var(--accent-ink)}
+
+/* Телефон: карточка — сетка «иконка | текст»; колонка иконки шире плитки, чтобы плитка не наезжала на заголовок. */
+@media(max-width:520px){
+ .ac-download-card{grid-template-columns:44px minmax(0,1fr);gap:0 14px}
+ .ac-download-card>.ac-os-icon{width:44px;height:44px;border-radius:13px}
+ .ac-download-card>.ac-os-icon svg{width:22px;height:22px}
+}

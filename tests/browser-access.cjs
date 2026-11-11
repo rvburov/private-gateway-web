@@ -92,6 +92,8 @@ async function enroll(page, secret, previous = false) {
     const setupResult = await setup; assert.equal(setupResult.status(), 200, 'Invite registration');
     await enroll(member, (await setupResult.json()).secret);
     await member.getByRole('heading', { name: 'Your Gateway. On every device.' }).waitFor();
+    // Заголовок появляется до ответа /api/downloads; кнопки считаются после загрузки сетки.
+    await member.locator('.ac-download-grid').waitFor();
     assert.equal(await member.getByRole('button', { name: 'Not available yet', exact: true }).count(), 4);
     assert.equal((await member.request.get(`${base}/api/admin/members`)).status(), 403);
     assert.equal((await member.request.get(`${base}/api/downloads`)).status(), 200);
