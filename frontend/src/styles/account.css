@@ -163,3 +163,36 @@
 @media(max-width:370px){.ac-main{padding-left:15px;padding-right:15px}.ac-sidebar{padding-left:12px;padding-right:12px}.ac-sidebar .ac-nav-link{font-size:10px;padding:9px 8px}.ac-sidebar .ac-nav-link svg{width:14px;height:14px}.ac-download-grid{grid-template-columns:1fr}.ac-download-card>p{min-height:0}.ac-platform-space{height:34px}.ac-architecture{margin-top:12px;margin-bottom:12px}.ac-architecture button{font-size:10px}.ac-download-btn{font-size:12px}.ac-file-label{font-size:9px}.ac-dialog-footer{padding:14px 18px}.ac-dialog-footer>.btn{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.ac-shell *{transition:none!important;scroll-behavior:auto!important}}
 @media(max-width:520px){.ac-download-grid{grid-template-columns:1fr;gap:13px}.ac-download-card{display:grid;grid-template-columns:37px minmax(0,1fr);gap:0 13px;padding:21px}.ac-download-card>.ac-os-icon{grid-column:1;grid-row:1/3;margin:0;align-self:center;width:32px;height:37px}.ac-download-title{grid-column:2}.ac-download-title h2{font-size:21px}.ac-download-card>p{grid-column:2;min-height:0;font-size:11px;margin-top:5px}.ac-download-title .ac-tag{display:inline-flex;font-size:8px}.ac-platform-space{display:none}.ac-download-card>.ac-architecture{grid-column:2;margin-top:14px;margin-bottom:0}.ac-architecture button{font-size:10px;padding:6px}.ac-download-btn{grid-column:1/-1;margin-top:20px;font-size:12px;min-height:42px;padding:10px 12px}.ac-download-btn svg{width:16px;height:16px}.ac-file-label{grid-column:1/-1;font-size:9px;margin-top:11px}.ac-ios{display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 12px}.ac-ios>.ac-os-icon{grid-column:1;grid-row:1/3;margin:0}.ac-ios>div:not(.ac-os-icon){grid-column:2}.ac-ios>.ac-status{grid-column:2;margin:12px 0 0;justify-self:start}.ac-ios h3{font-size:14px}.ac-ios p{font-size:11px}}
+
+/* Устройства участника и журнал скачиваний (2026-11-12) */
+.ac-devices-card {padding:6px 24px 18px}
+.ac-devices {display:grid;gap:4px}
+.ac-device-group {padding:18px 0;border-bottom:1px solid var(--line)}
+.ac-device-group:last-of-type {border-bottom:0}
+.ac-device-head {display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.ac-device-head h3 {font:600 15px var(--font-display);margin:0 0 4px;letter-spacing:-.01em}
+.ac-device-head p {font-size:12px;color:var(--fg-3);margin:0;line-height:1.55}
+.ac-device-count {flex:none;font-size:11px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.ac-device-list {list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ac-device-item {display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ac-device-icon {flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--surface-2);color:var(--fg-2)}
+.ac-device-icon svg {width:18px;height:18px}
+.ac-device-info {min-width:0;flex:1;display:grid;gap:3px}
+.ac-device-info strong {font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ac-device-info span {font-size:11px;color:var(--fg-3);overflow-wrap:anywhere}
+.ac-device-current {font-size:10px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:2px 8px}
+.ac-device-empty {font-size:12px;color:var(--fg-3);margin:0;padding:12px 14px;border:1px dashed var(--line-strong);border-radius:12px}
+.ac-member-devices {margin-top:18px;padding-top:6px;border-top:1px solid var(--line)}
+.ac-member-devices > h3 {font:600 14px var(--font-display);margin:12px 0 0}
+.ac-member-devices .ac-device-group {padding:12px 0}
+.ac-log-filter {display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--fg-2);margin:-6px 0 16px}
+.ac-log-platform {display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.ac-log-platform svg {width:15px;height:15px}
+.ac-muted {color:var(--fg-3);font-size:12px}
+@media(max-width:760px){
+ .ac-devices-card {padding:4px 16px 12px}
+ .ac-device-head {flex-direction:column;gap:8px}
+ .ac-device-item {flex-wrap:wrap;padding:12px;row-gap:8px}
+ .ac-device-info {flex:1 1 calc(100% - 50px)}
+ .ac-device-item > .btn {margin-left:50px}
+}

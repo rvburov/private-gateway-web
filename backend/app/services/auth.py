@@ -11,9 +11,11 @@ from app.api.schemas import UserOut
 from app.core.config import get_settings
 from app.core.cookies import clear_cookie, cookie_name, set_cookie
 from app.core.errors import AppError
+from app.core.net import mask_ip, user_agent
 from app.core.security import crypto, passwords, tokens, totp
 from app.db.models import (
     AccessCode,
+    AppDevice,
     AuditEvent,
     LoginChallenge,
     RecoveryCode,
@@ -45,6 +47,11 @@ async def revoke_access(db: AsyncSession, user: User) -> None:
     )
     await db.execute(
         update(TrustedDevice).where(TrustedDevice.user_id == user.id).values(revoked_at=now)
+    )
+    await db.execute(
+        update(AppDevice)
+        .where(AppDevice.user_id == user.id, AppDevice.revoked_at.is_(None))
+        .values(revoked_at=now)
     )
     await db.execute(
         update(LoginChallenge).where(LoginChallenge.user_id == user.id).values(consumed_at=now)
@@ -91,14 +98,28 @@ async def new_session(
             .values(revoked_at=now)
         )
     value = tokens.new_token()
-    db.add(
-        UserSession(
-            user_id=user.id,
-            id_hash=tokens.hash_token(value),
-            auth_version=user.auth_version,
-            expires_at=now + timedelta(days=get_settings().session_absolute_days),
-        )
+    session = UserSession(
+        user_id=user.id,
+        id_hash=tokens.hash_token(value),
+        auth_version=user.auth_version,
+        expires_at=now + timedelta(days=get_settings().session_absolute_days),
+        user_agent=user_agent(request),
+        ip_masked=mask_ip(client_ip(request)),
     )
+    db.add(session)
+    await enforce_session_limit(db, user)
+    # Доверенный браузер привязан к своему последнему входу: завершили вход — нужен снова код 2FA
+    known = request.cookies.get(cookie_name("device"), "")
+    if known and len(known) <= 128:
+        await db.execute(
+            update(TrustedDevice)
+            .where(
+                TrustedDevice.token_hash == tokens.hash_token(known),
+                TrustedDevice.user_id == user.id,
+                TrustedDevice.revoked_at.is_(None),
+            )
+            .values(session_id=session.id)
+        )
     if remember:
         device = tokens.new_token()
         db.add(
@@ -107,6 +128,7 @@ async def new_session(
                 token_hash=tokens.hash_token(device),
                 auth_version=user.auth_version,
                 expires_at=now + timedelta(days=get_settings().trusted_device_days),
+                session_id=session.id,
             )
         )
         set_cookie(response, "device", device)
@@ -115,6 +137,45 @@ async def new_session(
     set_cookie(response, "session", value)
     clear_cookie(response, "login")
     return {"status": "ok", "user": UserOut.model_validate(user)}
+
+
+async def enforce_session_limit(db: AsyncSession, user: User) -> None:
+    """Оставляет PGWEB_SESSION_LIMIT самых свежих входов на сайт, остальные завершает.
+
+    Блокировка строки участника упорядочивает одновременные входы: лимит не обходится гонкой.
+    """
+    now = utcnow()
+    await db.execute(select(User.id).where(User.id == user.id).with_for_update())
+    await db.flush()
+    settings = get_settings()
+    stale = (
+        await db.scalars(
+            select(UserSession.id)
+            .where(
+                UserSession.user_id == user.id,
+                UserSession.auth_version == user.auth_version,
+                UserSession.revoked_at.is_(None),
+                UserSession.expires_at > now,
+                UserSession.last_seen_at > now - timedelta(days=settings.session_idle_days),
+            )
+            .order_by(UserSession.last_seen_at.desc(), UserSession.id.desc())
+            .offset(settings.session_limit)
+        )
+    ).all()
+    if stale:
+        await end_sessions(db, list(stale))
+        audit(db, "session.evicted", user.id, user.id)
+
+
+async def end_sessions(db: AsyncSession, ids: list[int]) -> None:
+    """Завершает входы на сайт вместе с доверенными браузерами, которые к ним привязаны."""
+    now = utcnow()
+    await db.execute(update(UserSession).where(UserSession.id.in_(ids)).values(revoked_at=now))
+    await db.execute(
+        update(TrustedDevice)
+        .where(TrustedDevice.session_id.in_(ids), TrustedDevice.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
 
 
 async def new_challenge(db: AsyncSession, user: User, request: Request, response: Response) -> dict:

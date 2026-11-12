@@ -86,19 +86,62 @@ async function enroll(page, secret, previous = false) {
     await member.locator('#auth-invite').fill(invite);
     await member.locator('#auth-email').fill(memberEmail);
     await member.locator('#auth-name').fill('Browser Test Member');
-    await member.locator('#auth-password').fill(randomBytes(24).toString('hex'));
+    const memberPassword = randomBytes(24).toString('hex');
+    await member.locator('#auth-password').fill(memberPassword);
     const setup = member.waitForResponse(r => r.url().endsWith('/api/auth/2fa/setup'));
     await member.locator('.auth-submit').click();
     const setupResult = await setup; assert.equal(setupResult.status(), 200, 'Invite registration');
-    await enroll(member, (await setupResult.json()).secret);
+    const memberEnrollment = await enroll(member, (await setupResult.json()).secret);
     await member.getByRole('heading', { name: 'Your Gateway. On every device.' }).waitFor();
     // Заголовок появляется до ответа /api/downloads; кнопки считаются после загрузки сетки.
     await member.locator('.ac-download-grid').waitFor();
     assert.equal(await member.getByRole('button', { name: 'Not available yet', exact: true }).count(), 4);
     assert.equal((await member.request.get(`${base}/api/admin/members`)).status(), 403);
+    assert.equal((await member.request.get(`${base}/api/admin/downloads`)).status(), 403);
     assert.equal((await member.request.get(`${base}/api/downloads`)).status(), 200);
     await member.screenshot({ path: resolve(output, 'account-390.png'), fullPage: true });
 
+    // Вход приложения тем же аккаунтом: токен только в заголовке, cookie сайта его не заменяет
+    const appLogin = await member.request.post(`${base}/api/app/login`, { data: {
+      email: memberEmail, password: memberPassword, recovery_code: memberEnrollment.codes[0],
+      device: { uid: 'browser-test-device-0001', name: 'Browser Test Laptop', platform: 'linux', app_version: '0.0.0-test' } } });
+    assert.equal(appLogin.status(), 200, 'App login');
+    const appToken = (await appLogin.json()).token;
+    assert.equal((await member.request.get(`${base}/api/app/status`)).status(), 401);
+    assert.equal((await member.request.get(`${base}/api/app/status`, { headers: { Authorization: `Bearer ${appToken}` } })).status(), 200);
+    await member.getByRole('link', { name: 'Devices', exact: true }).click();
+    await member.getByRole('heading', { name: 'Your devices' }).waitFor();
+    await member.getByText('This browser', { exact: true }).waitFor();
+    await member.getByText('Browser Test Laptop', { exact: true }).waitFor();
+    assert.equal(await member.locator('.ac-device-count').nth(1).textContent(), '1 of 3 in use');
+    await member.screenshot({ path: resolve(output, 'devices-390.png'), fullPage: true });
+    const overflow = await member.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(overflow <= 0, 'No horizontal scroll on the devices page');
+
+    await admin.getByRole('link', { name: 'Members', exact: true }).click();
+    await admin.getByLabel('Search members', { exact: true }).fill(memberEmail);
+    await admin.getByRole('button', { name: 'Search', exact: true }).click();
+    await admin.getByRole('button', { name: 'Details: Browser Test Member', exact: true }).click();
+    // Администратор видит устройство приложения участника и задает ему личный лимит
+    await admin.getByRole('dialog').getByText('Browser Test Laptop', { exact: true }).waitFor();
+    await admin.getByRole('button', { name: 'Change device limit', exact: true }).click();
+    await admin.getByRole('dialog').getByLabel('Device limit', { exact: true }).fill('1');
+    await admin.getByRole('dialog').getByLabel('Your current 2FA code', { exact: true }).fill(await nextAdminCode(admin));
+    const limited = admin.waitForResponse(r => r.url().includes('/api/admin/members/') && r.request().method() === 'PATCH');
+    await admin.getByRole('button', { name: 'Confirm', exact: true }).click();
+    assert.equal((await limited).status(), 200, 'Personal device limit');
+    const secondDevice = await member.request.post(`${base}/api/app/login`, { data: {
+      email: memberEmail, password: memberPassword, recovery_code: memberEnrollment.codes[1],
+      device: { uid: 'browser-test-device-0002', name: 'Browser Test Phone', platform: 'android', app_version: '0.0.0-test' } } });
+    assert.equal(secondDevice.status(), 409, 'Device limit reached');
+    await admin.getByRole('dialog').waitFor({ state: 'detached' });
+    await admin.getByRole('button', { name: 'Details: Browser Test Member', exact: true }).click();
+    await admin.getByRole('dialog').getByText('1 of 1 in use', { exact: true }).waitFor();
+    await admin.screenshot({ path: resolve(output, 'member-devices-1440.png'), fullPage: true });
+    await admin.getByRole('button', { name: 'Download history', exact: true }).click();
+    await admin.waitForURL('**/admin/downloads?user=*');
+    await admin.getByRole('heading', { name: 'Download log' }).waitFor();
+    await admin.getByRole('heading', { name: 'No downloads yet' }).waitFor();
     await admin.getByRole('link', { name: 'Members', exact: true }).click();
     await admin.getByLabel('Search members', { exact: true }).fill(memberEmail);
     await admin.getByRole('button', { name: 'Search', exact: true }).click();
@@ -110,10 +153,11 @@ async function enroll(page, secret, previous = false) {
     assert.equal((await revoked).status(), 200);
     assert.equal((await member.request.get(`${base}/api/me`)).status(), 401);
     assert.equal((await member.request.get(`${base}/api/downloads`)).status(), 401);
+    assert.equal((await member.request.get(`${base}/api/app/status`, { headers: { Authorization: `Bearer ${appToken}` } })).status(), 401);
     await member.reload(); await member.waitForURL('**/login');
     await admin.screenshot({ path: resolve(output, 'members-1440.png'), fullPage: true });
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ passed: 1, failed: 0, skipped: 0,
-      scenario: 'real invitation, registration, 2FA enrollment, downloads, RBAC, immediate access revocation', syntheticData: true }));
+      scenario: 'real invitation, registration, 2FA enrollment, downloads, RBAC, app device login, device page, personal device limit, download log, immediate access revocation', syntheticData: true }));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error.message); process.exitCode = 1; });

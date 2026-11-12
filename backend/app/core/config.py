@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     trusted_device_days: int = Field(default=30, ge=1, le=30)
     session_absolute_days: int = Field(default=30, ge=1, le=30)
     session_idle_days: int = Field(default=14, ge=1, le=30)
+    # Одновременные входы на сайт: при превышении завершается самый давний сеанс
+    session_limit: int = Field(default=3, ge=1, le=20)
+    # Устройства с приложением на участника (если у него не задан свой лимит)
+    device_limit: int = Field(default=3, ge=1, le=50)
+    # Токен устройства приложения продлевается при каждой проверке; без проверок гаснет
+    app_token_days: int = Field(default=30, ge=1, le=90)
     download_root: Path = Path("downloads")
     # Хеш коммита, из которого собран образ API: по нему deploy.sh видит, что отвечает новая версия
     version: str = Field(default="dev", pattern=r"^[0-9A-Za-z._-]{1,40}$")

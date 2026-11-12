@@ -10,7 +10,7 @@ from app.api.schemas import InviteOut, UserOut
 from app.core.errors import AppError
 from app.core.security import tokens
 from app.db.models import AccessCode, User, utcnow
-from app.services import auth, limits
+from app.services import auth, devices, downloads, limits
 
 
 async def require_admin(db: AsyncSession, request: Request) -> User:
@@ -63,7 +63,8 @@ async def update_member(db: AsyncSession, request: Request, user_id: int, body) 
     user = await db.scalar(select(User).where(User.id == user_id).with_for_update())
     if not user:
         raise AppError(404, "not_found")
-    if body.status is None and body.role is None:
+    limit_given = "device_limit" in body.model_fields_set
+    if body.status is None and body.role is None and not limit_given:
         raise AppError(400, "no_changes")
     if user.id == actor.id:
         raise AppError(400, "self_change_forbidden")
@@ -85,6 +86,10 @@ async def update_member(db: AsyncSession, request: Request, user_id: int, body) 
     if changed:
         await auth.revoke_access(db, user)
         auth.audit(db, "member.updated", actor.id, user.id)
+    if limit_given and body.device_limit != user.device_limit:
+        # Новый лимит действует со следующего входа в приложение; вошедшие устройства остаются
+        user.device_limit = body.device_limit
+        auth.audit(db, "member.device_limit", actor.id, user.id)
     await db.commit()
     await limits.clear("admin-factor", str(actor.id))
     return UserOut.model_validate(user)
@@ -177,3 +182,38 @@ async def reset_code(db: AsyncSession, request: Request, user_id: int, code: str
     await db.commit()
     await limits.clear("admin-factor", str(actor.id))
     return {"code": raw, "expires_at": expires_at}
+
+
+async def _member(db: AsyncSession, user_id: int) -> User:
+    user = await db.scalar(select(User).where(User.id == user_id))
+    if not user:
+        raise AppError(404, "not_found")
+    return user
+
+
+async def member_devices(db: AsyncSession, request: Request, user_id: int) -> dict:
+    await require_admin(db, request)
+    # С запросом: на своей карточке администратор видит текущий браузер и не завершит его
+    return await devices.overview(db, await _member(db, user_id), request)
+
+
+async def revoke_member_session(
+    db: AsyncSession, request: Request, user_id: int, session_id: int
+) -> None:
+    # Завершение входа только защищает участника, поэтому без повторного кода 2FA
+    actor = await require_admin(db, request)
+    await devices.revoke_session(db, await _member(db, user_id), session_id, actor.id)
+
+
+async def revoke_member_device(
+    db: AsyncSession, request: Request, user_id: int, device_id: int
+) -> None:
+    actor = await require_admin(db, request)
+    await devices.revoke_device(db, await _member(db, user_id), device_id, actor.id)
+
+
+async def download_history(
+    db: AsyncSession, request: Request, user_id: int | None, limit: int, offset: int
+) -> dict:
+    await require_admin(db, request)
+    return await downloads.history(db, user_id, limit, offset)

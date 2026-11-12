@@ -2,7 +2,16 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, LargeBinary, String
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    LargeBinary,
+    String,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -31,6 +40,8 @@ class User(Base):
     totp_key_version: Mapped[int | None]
     totp_last_step: Mapped[int | None] = mapped_column(BigInteger)
     auth_version: Mapped[int] = mapped_column(default=1)
+    # Свой лимит устройств приложения; None — общий PGWEB_DEVICE_LIMIT (основа будущих тарифов)
+    device_limit: Mapped[int | None]
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
@@ -44,6 +55,9 @@ class UserSession(Base):
     last_seen_at: Mapped[datetime] = mapped_column(default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(index=True)
     revoked_at: Mapped[datetime | None]
+    # Чем вошли: показывается участнику и администратору в списке устройств
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    ip_masked: Mapped[str | None] = mapped_column(String(64))
 
 
 class TrustedDevice(Base):
@@ -55,6 +69,10 @@ class TrustedDevice(Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(index=True)
     revoked_at: Mapped[datetime | None]
+    # Последний вход этого браузера: завершение входа гасит и вход без 2FA с него
+    session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sessions.id", ondelete="SET NULL"), index=True
+    )
 
 
 class LoginChallenge(Base):
@@ -130,3 +148,54 @@ class Release(Base):
     store_url: Mapped[str | None] = mapped_column(String(1000))
     enabled: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class DownloadEvent(Base):
+    """Журнал скачиваний: кто, когда и какой выпуск получил. IP хранится маскированным."""
+
+    __tablename__ = "download_events"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    platform: Mapped[str] = mapped_column(String(16))
+    version: Mapped[str] = mapped_column(String(64))
+    filename: Mapped[str | None] = mapped_column(String(200))
+    ip_masked: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    at: Mapped[datetime] = mapped_column(default=utcnow, index=True)
+
+
+class AppDevice(Base):
+    """Устройство с приложением Private Gateway: вход в клиент по аккаунту сайта.
+
+    Токен устройства хранится только хешем. Активное устройство — не отозвано, не истекло и
+    выпущено при текущем auth_version участника (смена пароля или блокировка его гасят).
+    """
+
+    __tablename__ = "app_devices"
+    __table_args__ = (
+        CheckConstraint(
+            "platform IN ('windows','macos','ios','linux','android')", name="app_device_platform"
+        ),
+        Index(
+            "ux_app_devices_active_uid",
+            "user_id",
+            "device_uid",
+            unique=True,
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    device_uid: Mapped[str] = mapped_column(String(64))
+    name: Mapped[str] = mapped_column(String(100))
+    platform: Mapped[str] = mapped_column(String(16))
+    app_version: Mapped[str] = mapped_column(String(64))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    auth_version: Mapped[int]
+    ip_masked: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(index=True)
+    revoked_at: Mapped[datetime | None]

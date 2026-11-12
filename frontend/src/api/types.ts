@@ -5,6 +5,7 @@ export interface User {
   role: 'admin' | 'member';
   status: 'active' | 'blocked';
   totp_enabled: boolean;
+  device_limit?: number | null;
   created_at: string;
 }
 

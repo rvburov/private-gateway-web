@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router';
 import { errorText } from '../api/errors';
 import { AuthPage } from '../auth/AuthPage';
-import { AccountLayout, DownloadsPage, InvitesPage, MembersPage } from '../account';
+import { AccountLayout, DevicesPage, DownloadLogPage, DownloadsPage, InvitesPage, MembersPage } from '../account';
 import { LandingPage } from '../landing/LandingPage';
 import { landingText } from '../landing/locales';
 import { Brand, Icon, LanguageSwitch, ThemeButton } from '../ui';
@@ -43,6 +43,8 @@ export function App() {
     <Route path="/downloads" element={<RequireSession><AccountLayout><DownloadsPage /></AccountLayout></RequireSession>} />
     <Route path="/admin/members" element={<RequireSession admin><AccountLayout><MembersPage /></AccountLayout></RequireSession>} />
     <Route path="/admin/invites" element={<RequireSession admin><AccountLayout><InvitesPage /></AccountLayout></RequireSession>} />
+    <Route path="/admin/downloads" element={<RequireSession admin><AccountLayout><DownloadLogPage /></AccountLayout></RequireSession>} />
+    <Route path="/devices" element={<RequireSession><AccountLayout><DevicesPage /></AccountLayout></RequireSession>} />
     <Route path="*" element={<section className="page-status"><h1>{text.noPage}</h1><Link to="/">{text.backHome}</Link></section>} />
   </Routes></div></>;
 }

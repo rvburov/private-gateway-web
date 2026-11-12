@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { NavLink, useNavigate } from 'react-router';
+import { NavLink, useNavigate, useSearchParams } from 'react-router';
 import { request } from '../api/client';
 import { errorText } from '../api/errors';
 import { useApp } from '../app/context';
 import { Icon } from '../ui';
 import { accountText } from './locales';
-import { inviteStatus, looksLikeEmail, personName, safeDownloadUrl, type Download, type Invite, type InviteStatus, type ListResult, type Platform, type User } from './types';
+import { inviteStatus, looksLikeEmail, personName, safeDownloadUrl, type DevicesInfo, type Download, type DownloadEvent, type Invite, type InviteStatus, type ListResult, type Platform, type User } from './types';
 import './account.css';
 
 const PAGE_SIZE = 20;
@@ -17,6 +17,7 @@ function useAccountText() {
 
 function useResource<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
+  const [dataPath, setDataPath] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
@@ -26,13 +27,14 @@ function useResource<T>(path: string) {
     setLoading(true);
     setError(null);
     request<T>(path).then((result) => {
-      if (active) { setData(result); setLoading(false); }
+      if (active) { setData(result); setDataPath(path); setLoading(false); }
     }).catch((reason: unknown) => {
       if (active) { setError(reason); setLoading(false); }
     });
     return () => { active = false; };
   }, [path, revision]);
-  return { data, error, loading, reload };
+  // fresh: данные относятся к текущему адресу, а не к прежнему фильтру или странице
+  return { data, error, loading, reload, fresh: dataPath === path };
 }
 
 function ErrorNotice({ error, retry }: { error: unknown; retry?: () => void }) {
@@ -73,9 +75,11 @@ export function AccountLayout({ children }: { children: ReactNode }) {
       <div className="ac-sidebar-head"><span className="eyebrow">PRIVATE GATEWAY WEB</span><h2>{text.account}</h2></div>
       <nav aria-label={text.account}>
         <NavLink to="/downloads" className={navClass}><Icon name="download" /><span>{text.downloadNav}</span></NavLink>
+        <NavLink to="/devices" className={navClass}><Icon name="monitor" /><span>{text.devicesNav}</span></NavLink>
         {user?.role === 'admin' && <><div className="ac-nav-caption">{text.admin}</div>
           <NavLink to="/admin/members" className={navClass}><Icon name="users" /><span>{text.members}</span></NavLink>
           <NavLink to="/admin/invites" className={navClass}><Icon name="mail" /><span>{text.invites}</span></NavLink>
+          <NavLink to="/admin/downloads" className={navClass}><Icon name="history" /><span>{text.downloadLog}</span></NavLink>
         </>}
       </nav>
       <div className="ac-sidebar-bottom">
@@ -230,7 +234,7 @@ function InviteDialog({ close, onCreated }: { close: () => void; onCreated: () =
   </Dialog>;
 }
 
-type MemberAction = 'block' | 'restore' | 'promote' | 'demote' | 'reset';
+type MemberAction = 'block' | 'restore' | 'promote' | 'demote' | 'reset' | 'limit';
 function MemberDialog({ member, close, onChanged }: { member: User; close: () => void; onChanged: () => void }) {
   const text = useAccountText();
   const { user, lang } = useApp();
@@ -240,17 +244,25 @@ function MemberDialog({ member, close, onChanged }: { member: User; close: () =>
   const [error, setError] = useState<unknown>(null);
   const [validation, setValidation] = useState('');
   const [result, setResult] = useState<SecretResult | null>(null);
+  const [limit, setLimit] = useState(member.device_limit ? String(member.device_limit) : '');
+  const navigate = useNavigate();
   const formId = useId();
-  const labels = { block: text.revokeAccess, restore: text.restoreAccess, promote: text.promote, demote: text.demote, reset: text.resetCode };
-  const descriptions = { block: text.revokeDescription, restore: text.restoreDescription, promote: text.promoteDescription, demote: text.demoteDescription, reset: text.resetDescription };
+  const limitId = useId();
+  const labels = { block: text.revokeAccess, restore: text.restoreAccess, promote: text.promote, demote: text.demote, reset: text.resetCode, limit: text.setLimit };
+  const descriptions = { block: text.revokeDescription, restore: text.restoreDescription, promote: text.promoteDescription, demote: text.demoteDescription, reset: text.resetDescription, limit: text.limitDescription };
   function choose(next: MemberAction) { setAction(next); setCode(''); setError(null); setValidation(''); }
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!action || busy) return;
+    const limitValue = limit.trim() === '' ? null : Number(limit);
+    if (action === 'limit' && limitValue !== null && (!Number.isInteger(limitValue) || limitValue < 1 || limitValue > 50)) { setValidation(text.limitInvalid); return; }
     if (!/^\d{6}$/.test(code)) { setValidation(text.otpInvalid); return; }
     setBusy(true); setError(null); setValidation('');
     try {
-      if (action === 'reset') {
+      if (action === 'limit') {
+        await request(`/api/admin/members/${member.id}`, { method: 'PATCH', body: { device_limit: limitValue, code } });
+        onChanged(); close();
+      } else if (action === 'reset') {
         const response = await request<{ code: string; expires_at: string }>(`/api/admin/members/${member.id}/reset-code`, { method: 'POST', body: { code } });
         setResult({ title: text.resetCreated, recipient: member.email, ...response });
       } else {
@@ -266,8 +278,12 @@ function MemberDialog({ member, close, onChanged }: { member: User; close: () =>
   return <Dialog title={action ? labels[action] : personName(member)} close={close} busy={busy}
     footer={action ? <><button className="btn" disabled={busy} onClick={() => { setAction(null); setCode(''); setError(null); }}>{text.cancel}</button><button className={`btn ${action === 'block' ? 'ac-danger' : 'primary'}`} form={formId} type="submit" disabled={busy}>{busy ? text.working : text.confirm}</button></> : <button className="btn" onClick={close}>{text.done}</button>}>
     <Person user={member} /><dl className="ac-details"><div><dt>{text.role}</dt><dd>{member.role === 'admin' ? text.roleAdmin : text.roleMember}</dd></div><div><dt>{text.access}</dt><dd><AccessBadge active={member.status === 'active'} /></dd></div><div><dt>{text.created}</dt><dd>{dateLabel(member.created_at, lang)}</dd></div></dl>
-    {action ? <form id={formId} noValidate onSubmit={(event) => void submit(event)}><p>{descriptions[action]}</p><OtpField value={code} onChange={(value) => { setCode(value); setValidation(''); }} />{validation && <p className="ac-form-error" role="alert">{validation}</p>}<ErrorNotice error={error} /></form>
-      : member.id !== user?.id && <div className="ac-member-actions"><button className="btn" onClick={() => choose(member.status === 'active' ? 'block' : 'restore')}>{member.status === 'active' ? text.revokeAccess : text.restoreAccess}</button><button className="btn" onClick={() => choose(member.role === 'admin' ? 'demote' : 'promote')}>{member.role === 'admin' ? text.demote : text.promote}</button><button className="btn" onClick={() => choose('reset')}>{text.resetCode}</button></div>}
+    {action ? <form id={formId} noValidate onSubmit={(event) => void submit(event)}><p>{descriptions[action]}</p>{action === 'limit' && <label className="ac-field" htmlFor={limitId}>{text.limitField}<input id={limitId} value={limit} onChange={(event) => { setLimit(event.target.value.replace(/\D/g, '').slice(0, 2)); setValidation(''); }} inputMode="numeric" placeholder={text.defaultLimit} /></label>}<OtpField value={code} onChange={(value) => { setCode(value); setValidation(''); }} />{validation && <p className="ac-form-error" role="alert">{validation}</p>}<ErrorNotice error={error} /></form>
+      : <>
+        {member.id !== user?.id && <div className="ac-member-actions"><button className="btn" onClick={() => choose(member.status === 'active' ? 'block' : 'restore')}>{member.status === 'active' ? text.revokeAccess : text.restoreAccess}</button><button className="btn" onClick={() => choose(member.role === 'admin' ? 'demote' : 'promote')}>{member.role === 'admin' ? text.demote : text.promote}</button><button className="btn" onClick={() => choose('reset')}>{text.resetCode}</button></div>}
+        <div className="ac-member-actions">{member.id !== user?.id && <button className="btn" onClick={() => choose('limit')}>{text.setLimit}</button>}<button className="btn" onClick={() => { close(); navigate(`/admin/downloads?user=${member.id}`); }}><Icon name="history" />{text.memberDownloads}</button></div>
+        <MemberDevices memberId={member.id} />
+      </>}
   </Dialog>;
 }
 
@@ -343,5 +359,92 @@ export function InvitesPage() {
     <div className="ac-invite-help"><div className="ac-invite-help-icon"><Icon name="link" /></div><div><h3>{text.howTitle}</h3><p>{text.howLead}</p></div></div>
     {creating && <InviteDialog close={() => setCreating(false)} onCreated={resource.reload} />}
     {revoking && <RevokeInviteDialog invite={revoking} close={() => setRevoking(null)} onChanged={resource.reload} />}
+  </>;
+}
+
+function DevicesList({ data, revokeSession, revokeDevice }: { data: DevicesInfo; revokeSession: (id: number) => Promise<void>; revokeDevice: (id: number) => Promise<void> }) {
+  const text = useAccountText();
+  const { lang } = useApp();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  async function run(key: string, action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(key); setError(null);
+    try { await action(); } catch (reason) { setError(reason); } finally { setBusy(null); }
+  }
+  return <div className="ac-devices">
+    <section className="ac-device-group" aria-labelledby="ac-site-sessions">
+      <div className="ac-device-head"><div><h3 id="ac-site-sessions">{text.siteSessions}</h3><p>{text.siteSessionsLead}</p></div><span className="ac-device-count">{data.sessions.length} {text.of} {data.session_limit} {text.inUse}</span></div>
+      {data.sessions.length === 0 ? <p className="ac-device-empty">{text.noSessions}</p> : <ul className="ac-device-list">{data.sessions.map((item) => <li key={`s${item.id}`} className="ac-device-item">
+        <span className="ac-device-icon"><Icon name="globe" /></span>
+        <div className="ac-device-info"><strong>{item.label}{item.current && <span className="ac-device-current">{text.thisBrowser}</span>}</strong><span>{text.lastSeen}: {dateLabel(item.last_seen_at, lang)}{item.ip_masked && <> · {text.network} {item.ip_masked}</>}</span></div>
+        {!item.current && <button className="btn ghost ac-small-btn" disabled={busy !== null} onClick={() => void run(`s${item.id}`, () => revokeSession(item.id))} aria-label={`${text.endSession}: ${item.label}`}>{busy === `s${item.id}` ? text.working : text.endSession}</button>}
+      </li>)}</ul>}
+    </section>
+    <section className="ac-device-group" aria-labelledby="ac-app-devices">
+      <div className="ac-device-head"><div><h3 id="ac-app-devices">{text.appDevices}</h3><p>{text.appDevicesLead}</p></div><span className="ac-device-count">{data.devices.length} {text.of} {data.device_limit} {text.inUse}</span></div>
+      {data.devices.length === 0 ? <p className="ac-device-empty">{text.noAppDevices}</p> : <ul className="ac-device-list">{data.devices.map((item) => <li key={`d${item.id}`} className="ac-device-item">
+        <span className="ac-device-icon"><Icon name={platformIcons[item.platform]} /></span>
+        <div className="ac-device-info"><strong>{item.name}</strong><span>{platformNames[item.platform]} · {text.appVersion} {item.app_version} · {text.lastSeen}: {dateLabel(item.last_seen_at, lang)}{item.ip_masked && <> · {text.network} {item.ip_masked}</>}</span></div>
+        <button className="btn ghost ac-small-btn" disabled={busy !== null} onClick={() => void run(`d${item.id}`, () => revokeDevice(item.id))} aria-label={`${text.removeDevice}: ${item.name}`}>{busy === `d${item.id}` ? text.working : text.removeDevice}</button>
+      </li>)}</ul>}
+    </section>
+    <ErrorNotice error={error} />
+  </div>;
+}
+
+function MemberDevices({ memberId }: { memberId: number }) {
+  const text = useAccountText();
+  const resource = useResource<DevicesInfo>(`/api/admin/members/${memberId}/devices`);
+  async function revoke(kind: 'sessions' | 'devices', id: number) {
+    // Список обновляется и после отказа: строка могла устареть (вход уже завершен в другом месте)
+    try { await request(`/api/admin/members/${memberId}/${kind}/${id}/revoke`, { method: 'POST', body: {} }); }
+    finally { resource.reload(); }
+  }
+  return <div className="ac-member-devices"><h3>{text.memberDevices}</h3>
+    {resource.loading && !resource.data ? <Loading /> : resource.error ? <ErrorNotice error={resource.error} retry={resource.reload} /> : resource.data && <DevicesList data={resource.data} revokeSession={(id) => revoke('sessions', id)} revokeDevice={(id) => revoke('devices', id)} />}
+  </div>;
+}
+
+export function DevicesPage() {
+  const text = useAccountText();
+  const resource = useResource<DevicesInfo>('/api/me/devices');
+  async function revoke(kind: 'sessions' | 'devices', id: number) {
+    try { await request(`/api/me/${kind}/${id}/revoke`, { method: 'POST', body: {} }); }
+    finally { resource.reload(); }
+  }
+  return <>
+    <Heading kicker={text.security} title={text.devicesTitle} description={text.devicesLead} />
+    <section className="card ac-devices-card">
+      {resource.loading && !resource.data ? <Loading /> : resource.error ? <ErrorNotice error={resource.error} retry={resource.reload} /> : resource.data && <DevicesList data={resource.data} revokeSession={(id) => revoke('sessions', id)} revokeDevice={(id) => revoke('devices', id)} />}
+    </section>
+  </>;
+}
+
+export function DownloadLogPage() {
+  const text = useAccountText();
+  const { lang } = useApp();
+  const [params, setParams] = useSearchParams();
+  const [offset, setOffset] = useState(0);
+  const userId = /^\d+$/.test(params.get('user') ?? '') ? params.get('user') : null;
+  const query = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+  if (userId) query.set('user_id', userId);
+  const resource = useResource<ListResult<DownloadEvent>>(`/api/admin/downloads?${query}`);
+  const items = resource.fresh ? resource.data?.items ?? [] : [];
+  const filtered = userId ? items.find((item) => String(item.user?.id) === userId)?.user : null;
+  return <>
+    <Heading kicker={text.admin} title={text.downloadLog} description={text.downloadLogLead} />
+    {userId && <p className="ac-log-filter">{text.memberFilter}: <strong>{filtered ? personName(filtered) : `#${userId}`}</strong> <button className="btn ghost ac-small-btn" onClick={() => { setParams({}); setOffset(0); }}>{text.showAll}</button></p>}
+    <section className="card ac-members-card">
+      {resource.loading && !resource.fresh ? <Loading /> : resource.error ? <ErrorNotice error={resource.error} retry={resource.reload} /> : items.length === 0 ? <div className="ac-empty"><Icon name="history" /><h3>{text.logEmpty}</h3><p>{text.logEmptyLead}</p></div>
+        : <table className="ac-table ac-log-table"><caption className="ac-sr-only">{text.downloadLogLead}</caption><thead><tr><th>{text.when}</th><th>{text.member}</th><th>{text.platformCol}</th><th>{text.deviceCol}</th><th>{text.network}</th></tr></thead><tbody>{items.map((item) => <tr key={item.id}>
+          <td data-label={text.when}>{dateLabel(item.at, lang)}</td>
+          <td data-label={text.member}>{item.user ? <div className="ac-person"><span className="ac-avatar">{personName(item.user).split(/\s+/).map((part) => part[0]).slice(0, 2).join('')}</span><div><button className="ac-name-link" onClick={() => { setParams({ user: String(item.user!.id) }); setOffset(0); }}>{personName(item.user)}</button><span>{item.user.email}</span></div></div> : <span className="ac-muted">{text.deletedMember}</span>}</td>
+          <td data-label={text.platformCol}><span className="ac-log-platform"><Icon name={platformIcons[item.platform]} />{platformNames[item.platform]} {item.version}</span></td>
+          <td data-label={text.deviceCol}>{item.device}</td>
+          <td data-label={text.network}>{item.ip_masked ?? '—'}</td>
+        </tr>)}</tbody></table>}
+    </section>
+    {resource.data && <Pagination total={resource.data.total} offset={offset} busy={resource.loading} onChange={setOffset} />}
   </>;
 }

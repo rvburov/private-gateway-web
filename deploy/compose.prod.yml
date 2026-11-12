@@ -22,6 +22,10 @@ x-api-env: &api-env
   PGWEB_PUBLIC_ORIGIN: https://${PGWEB_DOMAIN:?задайте PGWEB_DOMAIN в deploy/.env}
   PGWEB_COOKIE_SECURE: "true"
   PGWEB_DOWNLOAD_ROOT: /downloads
+  # Одновременные входы на сайт и устройства приложения на участника (deploy/README.md)
+  PGWEB_SESSION_LIMIT: ${PGWEB_SESSION_LIMIT:-3}
+  PGWEB_DEVICE_LIMIT: ${PGWEB_DEVICE_LIMIT:-3}
+  PGWEB_APP_TOKEN_DAYS: ${PGWEB_APP_TOKEN_DAYS:-30}
 
 x-api: &api
   <<: *hardening

@@ -38,6 +38,18 @@ const en = {
   copy: 'Copy code', copied: 'Copied', copyFallback: 'Automatic copying is unavailable. Select the code and copy it manually.',
   revokeInviteTitle: 'Revoke invitation', revokeInviteDescription: 'The recipient will no longer be able to register using this invitation.',
   confirmed: 'Saved', invalidResponse: 'The server returned an unexpected response. Try again.',
+  devicesNav: 'Devices', security: 'SECURITY', devicesTitle: 'Your devices', devicesLead: 'Where you are signed in to this site and to the Private Gateway app.',
+  siteSessions: 'Website sign-ins', siteSessionsLead: 'A new sign-in over the limit ends the oldest one.',
+  appDevices: 'Private Gateway app', appDevicesLead: 'Devices signed in to the app. Remove a device to free a place for another one.',
+  inUse: 'in use', thisBrowser: 'This browser', lastSeen: 'Last active', signedIn: 'Signed in', network: 'Network',
+  endSession: 'End session', removeDevice: 'Remove device', noAppDevices: 'No devices yet. Sign in to the app with this account.',
+  noSessions: 'No other sign-ins.', appVersion: 'App',
+  downloadLog: 'Download log', downloadLogLead: 'Who downloaded the client and when. Addresses are stored without the last digits.',
+  when: 'When', platformCol: 'Platform', deviceCol: 'Device', logEmpty: 'No downloads yet', logEmptyLead: 'Records appear after the first download.',
+  deletedMember: 'Deleted member', showAll: 'Show all members', memberFilter: 'Member',
+  memberDevices: 'Devices', memberDownloads: 'Download history', deviceLimit: 'App device limit', defaultLimit: 'default',
+  setLimit: 'Change device limit', limitField: 'Device limit', limitDescription: 'How many devices this member can use the app on. Leave the field empty to use the default limit. Devices already signed in stay signed in.',
+  limitInvalid: 'Enter a number from 1 to 50 or leave the field empty.',
 };
 type Labels = { [K in keyof typeof en]: string };
 const ru: Labels = {
@@ -80,5 +92,17 @@ const ru: Labels = {
   copy: 'Скопировать код', copied: 'Скопировано', copyFallback: 'Автоматическое копирование недоступно. Выделите и скопируйте код вручную.',
   revokeInviteTitle: 'Отозвать приглашение', revokeInviteDescription: 'Получатель больше не сможет зарегистрироваться по этому приглашению.',
   confirmed: 'Сохранено', invalidResponse: 'Сервер вернул неожиданный ответ. Попробуйте снова.',
+  devicesNav: 'Устройства', security: 'БЕЗОПАСНОСТЬ', devicesTitle: 'Ваши устройства', devicesLead: 'Где выполнен вход на этот сайт и в приложение Private Gateway.',
+  siteSessions: 'Входы на сайт', siteSessionsLead: 'Новый вход сверх лимита завершает самый давний.',
+  appDevices: 'Приложение Private Gateway', appDevicesLead: 'Устройства, где выполнен вход в приложение. Удалите устройство, чтобы освободить место для другого.',
+  inUse: 'занято', thisBrowser: 'Этот браузер', lastSeen: 'Последняя активность', signedIn: 'Вход', network: 'Сеть',
+  endSession: 'Завершить сеанс', removeDevice: 'Удалить устройство', noAppDevices: 'Устройств пока нет. Войдите в приложение этим аккаунтом.',
+  noSessions: 'Других входов нет.', appVersion: 'Приложение',
+  downloadLog: 'Журнал скачиваний', downloadLogLead: 'Кто и когда скачивал клиент. Адреса хранятся без последних цифр.',
+  when: 'Когда', platformCol: 'Платформа', deviceCol: 'Устройство', logEmpty: 'Скачиваний пока не было', logEmptyLead: 'Записи появятся после первого скачивания.',
+  deletedMember: 'Удаленный участник', showAll: 'Показать всех участников', memberFilter: 'Участник',
+  memberDevices: 'Устройства', memberDownloads: 'История скачиваний', deviceLimit: 'Лимит устройств приложения', defaultLimit: 'по умолчанию',
+  setLimit: 'Изменить лимит устройств', limitField: 'Лимит устройств', limitDescription: 'На скольких устройствах участник может пользоваться приложением. Оставьте поле пустым — будет действовать лимит по умолчанию. Уже вошедшие устройства останутся.',
+  limitInvalid: 'Введите число от 1 до 50 или оставьте поле пустым.',
 };
 export const accountText: Record<'en' | 'ru', Labels> = { en, ru };

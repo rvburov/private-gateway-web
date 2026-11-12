@@ -56,6 +56,52 @@ url:string|null}`. По умолчанию все unavailable, без выдум
 iOS только проверенная ссылка App Store, когда администратор внесет ее через CLI; до этого null.
 Кнопки недоступных платформ отключены. Клиент сам не строит ссылки на GitHub Releases.
 
+Каждое отданное скачивание записывается в журнал: участник, время, платформа, версия, имя файла,
+IP без последних октетов (`/24` для IPv4, `/48` для IPv6) и User-Agent.
+`GET /api/admin/downloads?user_id=&limit=&offset=` (только администратор) ->
+`{items: DownloadEvent[], total:number}`, новые сверху.
+`DownloadEvent = {id,at:ISO8601,platform,version,filename|null,ip_masked|null,device:string,
+user:{id,email,display_name}|null}`; `device` — «браузер · ОС».
+
+## Устройства
+
+Входы на сайт ограничены `PGWEB_SESSION_LIMIT` (по умолчанию 3): новый вход сверх лимита
+завершает самый давний сеанс участника. Устройства приложения ограничены `PGWEB_DEVICE_LIMIT`
+(по умолчанию 3) или личным `device_limit` участника.
+
+- `GET /api/me/devices` -> `Devices`; `POST /api/me/sessions/{id}/revoke`,
+  `POST /api/me/devices/{id}/revoke` -> 204 (CSRF как у остальных изменений; чужие -> 404).
+- `GET /api/admin/members/{id}/devices` -> `Devices`; `POST /api/admin/members/{id}/sessions/{sid}/revoke`,
+  `POST /api/admin/members/{id}/devices/{did}/revoke` -> 204. Завершение входа защищает
+  участника, поэтому без повторного кода 2FA.
+- Завершенный вход (вручную или вытеснением сверх лимита) гасит и «запомненный» браузер,
+  который к нему привязан: с него снова нужен код 2FA.
+- `PATCH /api/admin/members/{id}` принимает `device_limit: 1..50 | null` (null — общий лимит);
+  с кодом 2FA, сеансы участника не завершаются.
+
+`Devices = {sessions: Session[], devices: AppDevice[], session_limit:number, device_limit:number}`,
+`Session = {id,label,ip_masked|null,created_at,last_seen_at,current:boolean}`,
+`AppDevice = {id,name,platform,app_version,ip_masked|null,created_at,last_seen_at}`.
+
+## Приложение Private Gateway
+
+Вход в приложение — аккаунтом сайта. Маршруты `/api/app/*` не читают cookie сайта, поэтому
+CSRF к ним не применяется; доступ — только по заголовку `Authorization: Bearer <токен>`.
+
+- `POST /api/app/login` `{email,password,code|recovery_code,device:{uid,name,platform,app_version}}` ->
+  `{token, expires_at, user:{email,display_name}, device: AppDevice}`. `uid` — постоянный
+  идентификатор установки (`[A-Za-z0-9_-]{16,64}`), `platform` — `windows|macos|linux|android|ios`.
+  Ошибки: `invalid_credentials` (401), `invalid_code` (400), `setup_required` (403, 2FA не
+  настроена на сайте), `device_limit` (409), `rate_limited` (429). Повторный вход того же `uid`
+  выдает новый токен, прежний гаснет, место не тратится. При `device_limit` предъявленный код
+  2FA все равно израсходован. Отказы после верного пароля не копят попытки входа на сайт.
+- `GET /api/app/status` -> `{status:'ok', expires_at, user, device}`; продлевает токен на
+  `PGWEB_APP_TOKEN_DAYS` (30 дней). 401 — токен отозван, устройство удалено, участник
+  заблокирован или сменил пароль: приложение выходит из аккаунта.
+- `POST /api/app/logout` -> 204, устройство удаляется.
+
+Токен хранится на сервере только хешем. Решение о доступе принимает сайт, а не приложение.
+
 ## Служебные адреса
 
 `GET /api/health` -> `{status:'ok', version:'<коммит сборки>'}` (liveness; `dev` вне сборки `deploy.sh`), `GET /api/ready` проверяет БД -> 200 или 503.

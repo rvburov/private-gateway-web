@@ -37,13 +37,16 @@ class SecurityMiddleware:
         origin = request.headers.get("origin")
         referer = request.headers.get("referer")
         cross_site = request.headers.get("sec-fetch-site") == "cross-site"
+        # Приложение входит и проверяет доступ по токену в Authorization, без cookie сайта:
+        # подделка запроса из чужой страницы ничего не дает, поэтому CSRF к /api/app/ не нужен
+        app_api = request.url.path.startswith("/api/app/")
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             if not origin and referer:
                 ref = urlsplit(referer)
                 origin = f"{ref.scheme}://{ref.netloc}"
             cookie = request.cookies.get(cookie_name("csrf"), "")
             token = request.headers.get("x-csrf-token", "")
-            if (
+            if not app_api and (
                 cross_site
                 or (origin is not None and origin != settings.public_origin)
                 or not cookie

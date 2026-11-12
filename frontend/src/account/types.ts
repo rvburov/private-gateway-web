@@ -23,6 +23,40 @@ export interface Download {
   url: string | null;
 }
 
+export interface SiteSession {
+  id: number;
+  label: string;
+  ip_masked: string | null;
+  created_at: string;
+  last_seen_at: string;
+  current: boolean;
+}
+export interface AppDeviceInfo {
+  id: number;
+  name: string;
+  platform: Platform;
+  app_version: string;
+  ip_masked: string | null;
+  created_at: string;
+  last_seen_at: string;
+}
+export interface DevicesInfo {
+  sessions: SiteSession[];
+  devices: AppDeviceInfo[];
+  session_limit: number;
+  device_limit: number;
+}
+export interface DownloadEvent {
+  id: number;
+  at: string;
+  platform: Platform;
+  version: string;
+  filename: string | null;
+  ip_masked: string | null;
+  device: string;
+  user: { id: number; email: string; display_name: string } | null;
+}
+
 // Адаптация функций AI Agent Capper: источник указан в реестре переноса.
 export function personName(user: Pick<User, 'display_name' | 'email'>): string {
   return user.display_name.trim() || user.email;

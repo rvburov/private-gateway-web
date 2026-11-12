@@ -28,7 +28,7 @@
   const demoNotice = `<div class="ac-demo-note">${icon('eye')}<span>Демонстрационные данные. Все изменения действуют до обновления страницы.</span></div>`;
 
   function shell(route, content) {
-    return `<section class="ac-shell" id="pg-account"><aside class="ac-sidebar"><div class="ac-sidebar-head"><span class="eyebrow">PRIVATE GATEWAY WEB</span><h2>Личный кабинет</h2></div><nav aria-label="Меню личного кабинета">${navButton('downloads', route, 'download', 'Скачать клиент')}${PG.state.role === 'admin' ? `<div class="ac-nav-caption">Администрирование</div>${navButton('admin-members', route, 'users', 'Участники')}${navButton('admin-invites', route, 'mail', 'Приглашения')}` : ''}</nav><div class="ac-sidebar-bottom"><div class="ac-session"><span class="ac-avatar small">${icon('user')}</span><div><strong>Демо-профиль</strong><span>${roleName(PG.state.role)}</span></div></div><button class="ac-nav-link ac-logout" data-account-route="login">${icon('logout')}<span>Выйти из кабинета</span></button></div></aside><div class="ac-main">${content}</div></section>`;
+    return `<section class="ac-shell" id="pg-account"><aside class="ac-sidebar"><div class="ac-sidebar-head"><span class="eyebrow">PRIVATE GATEWAY WEB</span><h2>Личный кабинет</h2></div><nav aria-label="Меню личного кабинета">${navButton('downloads', route, 'download', 'Скачать клиент')}${navButton('devices', route, 'monitor', 'Устройства')}${PG.state.role === 'admin' ? `<div class="ac-nav-caption">Администрирование</div>${navButton('admin-members', route, 'users', 'Участники')}${navButton('admin-invites', route, 'mail', 'Приглашения')}${navButton('admin-downloads', route, 'history', 'Журнал скачиваний')}` : ''}</nav><div class="ac-sidebar-bottom"><div class="ac-session"><span class="ac-avatar small">${icon('user')}</span><div><strong>Демо-профиль</strong><span>${roleName(PG.state.role)}</span></div></div><button class="ac-nav-link ac-logout" data-account-route="login">${icon('logout')}<span>Выйти из кабинета</span></button></div></aside><div class="ac-main">${content}</div></section>`;
   }
   function heading(kicker, title, description, action = '') {
     return `<div class="ac-heading"><div><span class="eyebrow">${kicker}</span><h1>${title}</h1><p>${description}</p></div>${action}</div>`;
@@ -59,9 +59,37 @@
   function invitesPage() {
     return heading('АДМИНИСТРИРОВАНИЕ', 'Приглашения', 'Доступ по приглашению. Только для тех, кого вы хотите видеть здесь.', `<button class="btn primary" data-ac-create-invite>${icon('plus')} Создать приглашение</button>`) + `${demoNotice}<section class="card ac-invites-card"><div class="ac-invites-head"><div><h2>Приглашения в кабинет</h2><p>Почта, роль и срок действия — под вашим контролем.</p></div><label class="ac-select-label"><span class="ac-sr-only">Статус приглашения</span><select id="ac-invite-filter"><option value="all" ${inviteFilter === 'all' ? 'selected' : ''}>Все статусы</option><option value="active" ${inviteFilter === 'active' ? 'selected' : ''}>Активные</option><option value="used" ${inviteFilter === 'used' ? 'selected' : ''}>Использованные</option><option value="revoked" ${inviteFilter === 'revoked' ? 'selected' : ''}>Отозванные</option></select></label></div><div id="ac-invite-list">${invitesList()}</div></section><div class="ac-invite-help"><div class="ac-invite-help-icon">${icon('link')}</div><div><h3>Как это работает</h3><p>Создайте приглашение → передайте код участнику → он пройдёт регистрацию и настроит защиту. В макете все шаги демонстрационные, письма не отправляются.</p></div></div>`;
   }
+  // Устройства и журнал скачиваний (2026-11-12): вымышленные данные, действия только в странице
+  const sessions = [
+    { id: 's1', label: 'Chrome · Windows', network: '203.0.113.0/24', seen: 'сейчас', current: true },
+    { id: 's2', label: 'Safari · iOS', network: '198.51.100.0/24', seen: 'вчера, 21:40', current: false },
+  ];
+  const appDevices = [
+    { id: 'd1', name: 'Рабочий ноутбук', platform: 'Windows', icon: 'windows', version: '0.2.0', network: '203.0.113.0/24', seen: '10 минут назад' },
+    { id: 'd2', name: 'Pixel 8', platform: 'Android', icon: 'android', version: '0.2.0', network: '198.51.100.0/24', seen: 'сегодня, 08:15' },
+  ];
+  const downloadLog = [
+    { when: '12 ноября, 10:04', member: 'Мария Орлова', email: 'maria@example.test', platform: 'Windows', icon: 'windows', version: '0.2.0', device: 'Chrome · Windows', network: '203.0.113.0/24' },
+    { when: '11 ноября, 19:22', member: 'Александр Соколов', email: 'alex@example.test', platform: 'Android', icon: 'android', version: '0.2.0', device: 'Chrome · Android', network: '198.51.100.0/24' },
+    { when: '9 ноября, 12:47', member: 'Мария Орлова', email: 'maria@example.test', platform: 'macOS', icon: 'apple', version: '0.1.9', device: 'Safari · macOS', network: '203.0.113.0/24' },
+  ];
+  const sessionLimit = 3;
+  const deviceLimit = 3;
+  function devicesBlock() {
+    const sessionItems = sessions.map(item => `<li class="ac-device-item"><span class="ac-device-icon">${icon('globe')}</span><div class="ac-device-info"><strong>${esc(item.label)}${item.current ? '<span class="ac-device-current">Этот браузер</span>' : ''}</strong><span>Последняя активность: ${esc(item.seen)} · Сеть ${esc(item.network)}</span></div>${item.current ? '' : `<button class="btn ghost ac-small-btn" data-ac-end-session="${item.id}">Завершить сеанс</button>`}</li>`).join('');
+    const deviceItems = appDevices.length ? `<ul class="ac-device-list">${appDevices.map(item => `<li class="ac-device-item"><span class="ac-device-icon">${osIcon(item.platform)}</span><div class="ac-device-info"><strong>${esc(item.name)}</strong><span>${esc(item.platform)} · Приложение ${esc(item.version)} · Последняя активность: ${esc(item.seen)} · Сеть ${esc(item.network)}</span></div><button class="btn ghost ac-small-btn" data-ac-remove-device="${item.id}">Удалить устройство</button></li>`).join('')}</ul>` : '<p class="ac-device-empty">Устройств пока нет. Войдите в приложение этим аккаунтом.</p>';
+    return `<div class="ac-devices"><section class="ac-device-group"><div class="ac-device-head"><div><h3>Входы на сайт</h3><p>Новый вход сверх лимита завершает самый давний.</p></div><span class="ac-device-count">${sessions.length} из ${sessionLimit} занято</span></div><ul class="ac-device-list">${sessionItems}</ul></section><section class="ac-device-group"><div class="ac-device-head"><div><h3>Приложение Private Gateway</h3><p>Устройства, где выполнен вход в приложение. Удалите устройство, чтобы освободить место для другого.</p></div><span class="ac-device-count">${appDevices.length} из ${deviceLimit} занято</span></div>${deviceItems}</section></div>`;
+  }
+  function devicesPage() {
+    return heading('БЕЗОПАСНОСТЬ', 'Ваши устройства', 'Где выполнен вход на этот сайт и в приложение Private Gateway.') + `<section class="card ac-devices-card">${devicesBlock()}</section>` + demoNotice;
+  }
+  function downloadLogPage() {
+    const rows = downloadLog.map(item => `<tr><td data-label="Когда">${esc(item.when)}</td><td data-label="Участник"><div class="ac-person"><span class="ac-avatar">${initials(item.member)}</span><div><strong>${esc(item.member)}</strong><span>${esc(item.email)}</span></div></div></td><td data-label="Платформа"><span class="ac-log-platform">${osIcon(item.platform)}${esc(item.platform)} ${esc(item.version)}</span></td><td data-label="Устройство">${esc(item.device)}</td><td data-label="Сеть">${esc(item.network)}</td></tr>`).join('');
+    return heading('АДМИНИСТРИРОВАНИЕ', 'Журнал скачиваний', 'Кто и когда скачивал клиент. Адреса хранятся без последних цифр.') + `<section class="card ac-members-card"><table class="ac-table ac-log-table"><thead><tr><th>Когда</th><th>Участник</th><th>Платформа</th><th>Устройство</th><th>Сеть</th></tr></thead><tbody>${rows}</tbody></table></section>` + demoNotice;
+  }
   PG.account = (route) => {
     if (route.startsWith('admin-') && PG.state.role !== 'admin') return shell(route, `<div class="ac-denied"><span class="ac-banner-icon">${icon('lock')}</span><h1>Этот раздел — для администратора</h1><p>В роли участника доступно скачивание приложения.</p><button class="btn primary" data-account-route="downloads">К скачиванию ${icon('arrow')}</button></div>`);
-    return shell(route, route === 'downloads' ? downloads() : route === 'admin-members' ? membersPage() : invitesPage());
+    return shell(route, route === 'downloads' ? downloads() : route === 'devices' ? devicesPage() : route === 'admin-members' ? membersPage() : route === 'admin-downloads' ? downloadLogPage() : invitesPage());
   };
   function refresh(route) {
     const root = document.getElementById('pg-account');
@@ -120,7 +148,7 @@
     };
   }
   function memberDetail(member, route) {
-    modal('Карточка участника', `<div class="ac-member-profile"><span class="ac-avatar large">${initials(member.name)}</span><div><h3>${esc(member.name)}</h3><p>${esc(member.email)}</p></div></div><dl class="ac-details"><div><dt>Роль</dt><dd>${roleName(member.role)}</dd></div><div><dt>Личный кабинет</dt><dd>${memberBadge(member)}</dd></div><div><dt>Двухфакторная защита</dt><dd>${member.twoFactor ? 'Включена' : 'Не настроена'}</dd></div><div><dt>Данные</dt><dd>Вымышленный участник</dd></div></dl><div class="ac-role-hint">Здесь нет VPN-профилей, ссылок подписки и управления соединениями.</div>`, `<button class="btn" data-ac-close>Закрыть</button>${member.active ? `<button class="btn ac-danger" data-ac-revoke-member="${member.id}">Отозвать доступ к кабинету</button>` : ''}`);
+    modal('Карточка участника', `<div class="ac-member-profile"><span class="ac-avatar large">${initials(member.name)}</span><div><h3>${esc(member.name)}</h3><p>${esc(member.email)}</p></div></div><dl class="ac-details"><div><dt>Роль</dt><dd>${roleName(member.role)}</dd></div><div><dt>Личный кабинет</dt><dd>${memberBadge(member)}</dd></div><div><dt>Двухфакторная защита</dt><dd>${member.twoFactor ? 'Включена' : 'Не настроена'}</dd></div><div><dt>Данные</dt><dd>Вымышленный участник</dd></div></dl><dl class="ac-details"><div><dt>Устройства приложения</dt><dd>${appDevices.length} из ${deviceLimit} · лимит по умолчанию</dd></div></dl><div class="ac-member-actions"><button class="btn" data-ac-limit>Изменить лимит устройств</button><button class="btn" data-account-route="admin-downloads">${icon('history')}История скачиваний</button></div><div class="ac-role-hint">Здесь нет VPN-профилей, ссылок подписки и управления соединениями.</div>`, `<button class="btn" data-ac-close>Закрыть</button>${member.active ? `<button class="btn ac-danger" data-ac-revoke-member="${member.id}">Отозвать доступ к кабинету</button>` : ''}`);
   }
   function revokeMember(member, route, secondStep = false) {
     const dialog = modal(secondStep ? 'Подтвердите действие кодом 2FA' : 'Отозвать доступ к кабинету?', secondStep ? `<p>Подтверждение отзыва для <strong>${esc(member.name)}</strong>.</p><form id="ac-revoke-form"><label class="ac-field">Демонстрационный код 2FA<input name="otp" inputmode="numeric" maxlength="6" pattern="123456" placeholder="123456" autocomplete="off" required></label><p class="ac-otp-hint">Введите <b>123456</b>. Это имитация шага защиты, без проверки на сервере.</p></form>` : `<p><strong>${esc(member.name)}</strong> потеряет доступ к личному кабинету и скачиванию клиента в этой демонстрации.</p><div class="ac-role-hint">VPN-подключения и устройства не затрагиваются. Их управление остаётся в Private Gateway.</div>`, `<button class="btn" data-ac-close>Отмена</button>${secondStep ? '<button class="btn ac-danger" type="submit" form="ac-revoke-form">Подтвердить отзыв</button>' : '<button class="btn ac-danger" id="ac-revoke-next">Продолжить с 2FA</button>'}`);
@@ -151,9 +179,12 @@
         modal(`Private Gateway для ${esc(data.acDownload)}`, `<div class="ac-download-modal-icon">${osIcon(data.acDownload)}</div><p>Здесь будет скачивание клиента для <strong>${esc(data.acDownload)}${data.acDownload === 'macOS' ? ` · ${esc(architecture)}` : ''}</strong>.</p><div class="ac-role-hint">Макет · файл не подключён. Версия и реальная ссылка не заданы. Никакие файлы не скачиваются.</div>`, '<button class="btn primary" data-ac-close>Понятно</button>'); return;
       }
       if (data.acArch) { architecture = data.acArch; refresh(route); return; }
+      if (data.acEndSession) { const index = sessions.findIndex(item => item.id === data.acEndSession); if (index >= 0) sessions.splice(index, 1); refresh(route); PG.toast('В макете сеанс завершен.'); return; }
+      if (data.acRemoveDevice) { const index = appDevices.findIndex(item => item.id === data.acRemoveDevice); if (index >= 0) appDevices.splice(index, 1); refresh(route); PG.toast('В макете устройство удалено: приложение на нем попросит войти снова.'); return; }
       if (PG.state.role !== 'admin') return;
       if ('acCreateInvite' in data) { inviteForm(route); return; }
       if (data.acFilter) { filter = data.acFilter; refresh(route); return; }
+      if ('acLimit' in data) { PG.toast('В макете лимит меняется после кода 2FA: число от 1 до 50 или пусто — лимит по умолчанию.'); return; }
       if (data.acDetail) { const member = members.find(item => item.id === data.acDetail); if (member) memberDetail(member, route); return; }
       if (data.acRevokeMember) { const member = members.find(item => item.id === data.acRevokeMember); if (member) revokeMember(member, route); return; }
       if (data.acRevokeInvite) { const invite = invites.find(item => item.id === data.acRevokeInvite); if (invite) revokeInvite(invite, route); return; }

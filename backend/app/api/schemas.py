@@ -94,6 +94,37 @@ class InviteIn(ConfirmIn):
 class MemberIn(ConfirmIn):
     status: Status | None = None
     role: Role | None = None
+    # Свой лимит устройств приложения; null — вернуть общий (PGWEB_DEVICE_LIMIT)
+    device_limit: int | None = Field(default=None, ge=1, le=50)
+
+
+DeviceUid = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{16,64}$")]
+AppPlatform = Literal["windows", "macos", "linux", "android", "ios"]
+
+
+class AppDeviceIn(Input):
+    uid: DeviceUid
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
+        AfterValidator(no_nul),
+    ]
+    platform: AppPlatform
+    app_version: Annotated[str, StringConstraints(pattern=r"^[0-9A-Za-z.+~-]{1,64}$")]
+
+
+class AppLoginIn(Input):
+    email: Text
+    password: Password
+    code: Totp | None = None
+    recovery_code: Code | None = None
+    device: AppDeviceIn
+
+    @model_validator(mode="after")
+    def one_code(self) -> "AppLoginIn":
+        if (self.code is None) == (self.recovery_code is None):
+            raise ValueError("code_or_recovery_code")
+        return self
 
 
 class UserOut(BaseModel):
@@ -104,6 +135,7 @@ class UserOut(BaseModel):
     role: Role
     status: Status
     totp_enabled: bool
+    device_limit: int | None = None
     created_at: datetime
 
 
@@ -179,3 +211,70 @@ class DownloadOut(BaseModel):
 
 class DownloadsOut(BaseModel):
     items: list[DownloadOut]
+
+
+class AppUserOut(BaseModel):
+    email: str
+    display_name: str
+
+
+class AppDeviceOut(BaseModel):
+    id: int
+    name: str
+    platform: AppPlatform
+    app_version: str
+    ip_masked: str | None
+    created_at: datetime
+    last_seen_at: datetime
+
+
+class AppLoginOut(BaseModel):
+    token: str
+    expires_at: datetime
+    user: AppUserOut
+    device: AppDeviceOut
+
+
+class AppStatusOut(BaseModel):
+    status: Literal["ok"]
+    expires_at: datetime
+    user: AppUserOut
+    device: AppDeviceOut
+
+
+class SessionOut(BaseModel):
+    id: int
+    label: str
+    ip_masked: str | None
+    created_at: datetime
+    last_seen_at: datetime
+    current: bool
+
+
+class DevicesOut(BaseModel):
+    sessions: list[SessionOut]
+    devices: list[AppDeviceOut]
+    session_limit: int
+    device_limit: int
+
+
+class DownloadUserOut(BaseModel):
+    id: int
+    email: str
+    display_name: str
+
+
+class DownloadEventOut(BaseModel):
+    id: int
+    at: datetime
+    platform: Literal["windows", "macos", "ios", "linux", "android"]
+    version: str
+    filename: str | None
+    ip_masked: str | None
+    device: str
+    user: DownloadUserOut | None
+
+
+class DownloadEventsOut(BaseModel):
+    items: list[DownloadEventOut]
+    total: int
