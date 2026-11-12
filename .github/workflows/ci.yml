@@ -119,7 +119,7 @@ jobs:
       - name: Синтаксис и shellcheck скриптов сервера
         run: |
           bash -n deploy/*.sh deploy/backup/*.sh tests/deploy/*.sh
-          shellcheck -x -P deploy/backup deploy/deploy.sh deploy/server-setup.sh deploy/backup/*.sh tests/deploy/login-probe.sh
+          shellcheck -x -P deploy/backup deploy/deploy.sh deploy/server-setup.sh deploy/import-release.sh deploy/backup/*.sh tests/deploy/login-probe.sh
       - name: Сервер как у AI Agent Capper (пользователь deploy, ключи бэкапа capper)
         run: |
           sudo apt-get install -y -qq age > /dev/null
@@ -183,6 +183,25 @@ jobs:
           sudo -u deploy docker compose exec -T backup backup.sh
           sudo -u deploy docker compose exec -T backup restore-check.sh
           sudo -u deploy docker compose exec -T backup restore.sh --list
+      - name: Прием выпуска клиента (ключ import-release.sh)
+        run: |
+          cmd=(bash /opt/private-gateway-web/deploy/import-release.sh --ssh)
+          head -c 300000 /dev/urandom > /tmp/PrivateGateway-1.2.3-win-x64.msi
+          sha="$(sha256sum /tmp/PrivateGateway-1.2.3-win-x64.msi | cut -d' ' -f1)"
+          sudo -u deploy env SSH_ORIGINAL_COMMAND="import windows 1.2.3 PrivateGateway-1.2.3-win-x64.msi $sha" \
+            "${cmd[@]}" < /tmp/PrivateGateway-1.2.3-win-x64.msi
+          row="$(cd /opt/private-gateway-web/deploy && sudo -u deploy docker compose exec -T postgres \
+            psql -U pgweb -d pgweb -tAc "select platform, version, sha256 from releases")"
+          test "$row" = "windows|1.2.3|$sha"
+          test -z "$(sudo ls -A /opt/private-gateway-web/deploy/imports)"
+          # Поврежденный файл, бета, путь в имени и чужая команда не принимаются
+          if echo broken | sudo -u deploy env SSH_ORIGINAL_COMMAND="import windows 1.2.4 a.msi $sha" "${cmd[@]}"; then exit 1; fi
+          if sudo -u deploy env SSH_ORIGINAL_COMMAND="import windows 1.3.0-beta a.msi $sha" "${cmd[@]}" < /dev/null; then exit 1; fi
+          if sudo -u deploy env SSH_ORIGINAL_COMMAND="import windows 1.2.4 ../x $sha" "${cmd[@]}" < /dev/null; then exit 1; fi
+          if sudo -u deploy env SSH_ORIGINAL_COMMAND="rm -rf /" "${cmd[@]}" < /dev/null; then exit 1; fi
+          row="$(cd /opt/private-gateway-web/deploy && sudo -u deploy docker compose exec -T postgres \
+            psql -U pgweb -d pgweb -tAc "select version from releases where platform = 'windows'")"
+          test "$row" = 1.2.3
       - name: Повторный деплой и ограничение ключа CI
         run: |
           sudo -iu deploy bash /opt/private-gateway-web/deploy/deploy.sh --no-fetch --no-pull | tee /tmp/redeploy.log

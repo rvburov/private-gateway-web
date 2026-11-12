@@ -11,6 +11,8 @@
 #   --domain ДОМЕН       домен сайта (DNS A на IP этого сервера), попадет в deploy/.env
 #   --ci-key КЛЮЧ        публичный ключ ed25519 только для деплоя из GitHub Actions: на сервере
 #                        он может лишь запустить deploy.sh (command=..., restrict)
+#   --release-key КЛЮЧ   публичный ключ ed25519 workflow «Выпуск на сайт» репозитория клиента: может лишь
+#                        принять файл выпуска (import-release.sh --ssh, restrict)
 #   --capper-dir ПАПКА   где лежит AI Agent Capper (по умолчанию /opt/ai_agent_capper)
 #   --repo URL           репозиторий (по умолчанию https://github.com/rvburov/private-gateway-web.git)
 #
@@ -37,10 +39,12 @@ die() {
 
 domain=""
 ci_key=""
+release_key=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --domain) domain="${2:?}"; shift ;;
     --ci-key) ci_key="${2:?}"; shift ;;
+    --release-key) release_key="${2:?}"; shift ;;
     --capper-dir) CAPPER_DIR="${2:?}"; shift ;;
     --repo) REPO_URL="${2:?}"; shift ;;
     *) die "неизвестный аргумент: $1" ;;
@@ -53,9 +57,10 @@ if [ -n "$domain" ]; then
   [[ "$domain" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]] \
     || die "домен: строчные латинские буквы, цифры, точки и дефисы"
 fi
-if [ -n "$ci_key" ]; then
-  [[ "$ci_key" =~ ^ssh-ed25519\ [A-Za-z0-9+/=]+(\ .*)?$ ]] || die "--ci-key: ожидается ключ ssh-ed25519"
-fi
+for key in "$ci_key" "$release_key"; do
+  [ -z "$key" ] || [[ "$key" =~ ^ssh-ed25519\ [A-Za-z0-9+/=]+(\ .*)?$ ]] \
+    || die "--ci-key и --release-key: ожидается строка ключа ssh-ed25519 из файла .pub"
+done
 command -v docker > /dev/null || die "нет Docker: сначала server-setup.sh AI Agent Capper"
 id "$DEPLOY_USER" > /dev/null 2>&1 || die "нет пользователя $DEPLOY_USER: сначала server-setup.sh AI Agent Capper"
 id -nG "$DEPLOY_USER" | tr ' ' '\n' | grep -qx docker || die "$DEPLOY_USER не в группе docker"
@@ -117,20 +122,28 @@ chown "$DEPLOY_USER:$DEPLOY_USER" "$sites_dir"
 install -d -m 755 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$APP_DIR/deploy/imports"
 echo "файлы сайтов общего входа: $sites_dir; входящие файлы выпусков: $APP_DIR/deploy/imports"
 
-if [ -n "$ci_key" ]; then
-  log "Ключ GitHub Actions (только deploy.sh)"
+add_key() {
+  # add_key <ключ> <команда>: ключ в authorized_keys пользователя deploy, только эта команда
+  local key="$1" command="$2" body
   install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$deploy_home/.ssh"
   touch "$deploy_home/.ssh/authorized_keys"
-  key_body="$(printf '%s\n' "$ci_key" | cut -d' ' -f2)"
-  if ! grep -qF "$key_body" "$deploy_home/.ssh/authorized_keys"; then
-    echo "command=\"bash $APP_DIR/deploy/deploy.sh --ssh\",restrict $ci_key" \
-      >> "$deploy_home/.ssh/authorized_keys"
+  body="$(printf '%s\n' "$key" | cut -d' ' -f2)"
+  if ! grep -qF "$body" "$deploy_home/.ssh/authorized_keys"; then
+    echo "command=\"$command\",restrict $key" >> "$deploy_home/.ssh/authorized_keys"
     echo "ключ добавлен"
   else
     echo "ключ уже есть"
   fi
   chown "$DEPLOY_USER:$DEPLOY_USER" "$deploy_home/.ssh/authorized_keys"
   chmod 600 "$deploy_home/.ssh/authorized_keys"
+}
+if [ -n "$ci_key" ]; then
+  log "Ключ GitHub Actions (только deploy.sh)"
+  add_key "$ci_key" "bash $APP_DIR/deploy/deploy.sh --ssh"
+fi
+if [ -n "$release_key" ]; then
+  log "Ключ выпусков клиента (только import-release.sh)"
+  add_key "$release_key" "bash $APP_DIR/deploy/import-release.sh --ssh"
 fi
 
 [ -n "$domain" ] || domain="$(grep -E '^PGWEB_DOMAIN=' "$env_file" | tail -n 1 | cut -d= -f2-)"
@@ -153,4 +166,7 @@ cat <<EOF
   DEPLOY_USER          $DEPLOY_USER
   DEPLOY_KNOWN_HOSTS   $ip${domain:+,$domain} $host_key
   DEPLOY_SSH_KEY       секретная часть ключа, публичную часть передайте сюда через --ci-key
+
+Секреты репозитория private-gateway-client для выпусков на сайт: WEBSITE_HOST, WEBSITE_USER и
+WEBSITE_KNOWN_HOSTS — те же значения, WEBSITE_SSH_KEY — секретная часть ключа из --release-key.
 EOF

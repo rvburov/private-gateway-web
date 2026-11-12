@@ -120,7 +120,32 @@ docker compose run --rm cli bootstrap-admin --email ВАШ_EMAIL
 
 ## 5. Файлы клиента
 
-Проверенный выпуск — в `/opt/private-gateway-web/deploy/imports` (файл должен читаться всеми:
+**Автоматически.** После выпуска клиента (тег `vX.Y.Z` в `private-gateway-client`, workflow
+«Выпуск на GitHub») workflow «Выпуск на сайт» того репозитория скачивает файлы выпуска, сверяет
+их с `SHA256SUMS` и отправляет на сервер: Windows — `.msi`, macOS — `.dmg`, Linux — `.deb`,
+Android — `.apk`. Бета-выпуски (версия с `-`) на сайт не попадают. На сервере файл принимает
+`import-release.sh`: отдельный ключ может только он, файл проверяется по размеру и SHA-256 и
+вносится командой `publish-release`. Ссылки закрытого репозитория участникам не нужны: файл
+лежит на сервере и выдается после входа.
+
+Настройка, один раз. **На компьютере** — ключ:
+
+```bash
+ssh-keygen -t ed25519 -C "pgweb-releases" -f pgweb-releases
+```
+
+**На сервере** — открытая часть ключа (свежий `server-setup.sh` из `master`):
+
+```bash
+sudo bash server-setup.sh --release-key "СТРОКА_ИЗ_pgweb-releases.pub"
+```
+
+**В GitHub** `private-gateway-client` → Settings → Secrets and variables → Actions: `WEBSITE_HOST`,
+`WEBSITE_USER` (`deploy`), `WEBSITE_KNOWN_HOSTS` — те же значения, что `DEPLOY_*` этого
+репозитория, `WEBSITE_SSH_KEY` — содержимое файла `pgweb-releases`. Проверка — Actions →
+«Выпуск на сайт» → Run workflow с тегом последнего выпуска.
+
+**Вручную.** Проверенный выпуск — в `/opt/private-gateway-web/deploy/imports` (файл должен читаться всеми:
 `chmod 644`), затем:
 
 ```bash
