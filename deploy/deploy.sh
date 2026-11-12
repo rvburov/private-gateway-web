@@ -196,8 +196,9 @@ install_site() {
   sites_dir="$(env_value PGWEB_CADDY_SITES_DIR)"
   sites_dir="${sites_dir:-/opt/ai_agent_capper/deploy/caddy-sites}"
   target="$sites_dir/$SITE_NAME.caddy"
-  [ -d "$sites_dir" ] && [ -w "$sites_dir" ] \
-    || die "нет папки $sites_dir или нет права записи: запустите server-setup.sh (deploy/README.md)"
+  if [ ! -d "$sites_dir" ] || [ ! -w "$sites_dir" ]; then
+    die "нет папки $sites_dir или нет права записи: запустите server-setup.sh (deploy/README.md)"
+  fi
   candidate="$(site_config)"
   if [ -f "$target" ] && [ "$(cat "$target")" = "$candidate" ]; then
     log "файл сайта для общего входа не изменился"
