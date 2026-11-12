@@ -1,0 +1,6 @@
+# Расписание контейнера backup (busybox crond), время UTC. Вывод — в лог контейнера:
+#   docker compose logs backup
+# Время сдвинуто на 15 минут от бэкапов AI Agent Capper на этом же сервере (01:30 и 02:30)
+# min hour day month weekday command
+45 1 * * * /usr/local/bin/backup.sh > /proc/1/fd/1 2>&1
+45 2 1 * * /usr/local/bin/restore-check.sh > /proc/1/fd/1 2>&1

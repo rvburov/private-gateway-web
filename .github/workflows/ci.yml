@@ -90,7 +90,7 @@ jobs:
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
-      - run: bash -n scripts/*.sh deploy/local.sh
+      - run: bash -n scripts/*.sh deploy/*.sh deploy/backup/*.sh
       - run: scripts/dev.sh init
       - run: deploy/local.sh config
       - run: deploy/local.sh up
@@ -102,6 +102,102 @@ jobs:
       - name: Остановить только стенд этой проверки
         if: always()
         run: deploy/local.sh down
+
+  # Рабочий стек как на сервере AI Agent Capper: пользователь deploy, общий вход Caddy capper
+  # (имитация tests/deploy/front), server-setup.sh, deploy.sh, HTTPS, IP посетителя за двумя
+  # Caddy, бэкап и проверка восстановления, повторный деплой и ограничение ключа CI
+  production:
+    name: Рабочий стек за общим входом
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Полная история: коммит передается в отдельный репозиторий как master
+          fetch-depth: 0
+      - name: Синтаксис и shellcheck скриптов сервера
+        run: |
+          bash -n deploy/*.sh deploy/backup/*.sh tests/deploy/*.sh
+          shellcheck -x -P deploy/backup deploy/deploy.sh deploy/server-setup.sh deploy/backup/*.sh tests/deploy/login-probe.sh
+      - name: Сервер как у AI Agent Capper (пользователь deploy, ключи бэкапа capper)
+        run: |
+          sudo apt-get install -y -qq age > /dev/null
+          sudo useradd --create-home --shell /bin/bash --groups docker deploy
+          keys="$(age-keygen 2>&1)"
+          pub="$(printf '%s\n' "$keys" | sed -n 's/.*public key: \(age1[0-9a-z]*\).*/\1/p' | head -n1)"
+          sec="$(printf '%s\n' "$keys" | grep -o 'AGE-SECRET-KEY-1[0-9A-Z]*' | head -n1)"
+          test -n "$pub" && test -n "$sec"
+          sudo install -d -m 755 /opt/ai_agent_capper/deploy
+          printf 'CAPPER_DOMAIN=capper.localhost\nBACKUP_AGE_RECIPIENTS=%s\nBACKUP_AGE_IDENTITY=%s\n' "$pub" "$sec" \
+            | sudo tee /opt/ai_agent_capper/deploy/.env > /dev/null
+          sudo chmod 600 /opt/ai_agent_capper/deploy/.env
+          echo "127.0.0.1 pgweb.localhost capper.localhost" | sudo tee -a /etc/hosts > /dev/null
+          # Репозиторий для server-setup.sh: проверяемый коммит как master
+          git init --quiet --bare /tmp/pgweb.git
+          git push --quiet /tmp/pgweb.git HEAD:refs/heads/master
+          sudo chown -R deploy:deploy /tmp/pgweb.git
+          ssh-keygen -q -t ed25519 -N "" -C ci-deploy -f /tmp/ci_key
+      - name: Общий вход (имитация Caddy AI Agent Capper)
+        run: docker compose -f tests/deploy/front/compose.yml up -d --build --wait
+      - name: server-setup.sh
+        run: |
+          sudo bash deploy/server-setup.sh --domain pgweb.localhost --repo /tmp/pgweb.git \
+            --ci-key "$(cat /tmp/ci_key.pub)"
+          env_file=/opt/private-gateway-web/deploy/.env
+          test "$(sudo stat -c '%a %U' "$env_file")" = "600 deploy"
+          sudo grep -q '^BACKUP_AGE_RECIPIENTS=age1' "$env_file"
+          sudo grep -q '^BACKUP_S3_PREFIX=private-gateway-web$' "$env_file"
+          test "$(stat -c %U /opt/ai_agent_capper/deploy/caddy-sites)" = deploy
+          sudo grep -q '^command="bash /opt/private-gateway-web/deploy/deploy.sh --ssh",restrict ssh-ed25519 ' \
+            /home/deploy/.ssh/authorized_keys
+          # Повторный запуск ничего не перезаписывает
+          before="$(sudo sha256sum "$env_file")"
+          sudo bash deploy/server-setup.sh --repo /tmp/pgweb.git > /dev/null
+          test "$before" = "$(sudo sha256sum "$env_file")"
+          # Проверочный сертификат Caddy для pgweb.localhost — не от Let's Encrypt
+          echo 'PGWEB_HEALTH_INSECURE=1' | sudo tee -a "$env_file" > /dev/null
+      - name: Первый деплой
+        run: sudo -iu deploy bash /opt/private-gateway-web/deploy/deploy.sh --no-fetch
+      - name: Проверки через общий вход по HTTPS
+        run: python3 deploy/smoke.py
+        env:
+          PGWEB_SMOKE_ORIGIN: https://pgweb.localhost
+          PGWEB_SMOKE_INSECURE: "1"
+      - name: IP посетителя за двумя Caddy
+        run: |
+          host="$(tests/deploy/login-probe.sh https://pgweb.localhost 6)"
+          echo "этот компьютер, подмененный X-Forwarded-For:$host"
+          [ "${host##* }" = 429 ]
+          front="$(docker inspect --format '{{(index .NetworkSettings.Networks "capper_edge").IPAddress}}' capper-caddy-1)"
+          other="$(docker run --rm --network capper_edge -v "$PWD/tests/deploy/login-probe.sh:/p.sh:ro" \
+            --entrypoint sh curlimages/curl:8.17.0 /p.sh https://pgweb.localhost 1 \
+            --resolve "pgweb.localhost:443:$front")"
+          echo "другой посетитель:$other"
+          [ "${other# }" = 401 ]
+      - name: Администратор, бэкап и проверка восстановления
+        working-directory: /opt/private-gateway-web/deploy
+        run: |
+          printf '%s\n' "ci-$(openssl rand -hex 16)" | sudo -u deploy docker compose run --rm -T cli \
+            bootstrap-admin --email owner@example.test --name CI --password-stdin
+          sudo -u deploy docker compose exec -T backup backup.sh
+          sudo -u deploy docker compose exec -T backup restore-check.sh
+          sudo -u deploy docker compose exec -T backup restore.sh --list
+      - name: Повторный деплой и ограничение ключа CI
+        run: |
+          sudo -iu deploy bash /opt/private-gateway-web/deploy/deploy.sh --no-fetch --no-pull | tee /tmp/redeploy.log
+          grep -q 'сохранены с тегом previous' /tmp/redeploy.log
+          grep -q 'файл сайта для общего входа не изменился' /tmp/redeploy.log
+          grep -q 'копия базы перед миграциями' /tmp/redeploy.log
+          if sudo -u deploy env SSH_ORIGINAL_COMMAND='rm -rf /' bash /opt/private-gateway-web/deploy/deploy.sh --ssh; then
+            echo 'ключ CI выполнил не команду deploy' >&2
+            exit 1
+          fi
+      - name: Состояние и логи
+        if: failure()
+        run: |
+          (cd /opt/private-gateway-web/deploy && sudo -u deploy docker compose ps -a && sudo -u deploy docker compose logs --no-color --tail=150) || true
+          docker compose -f tests/deploy/front/compose.yml logs --no-color --tail=100 || true
 
   secrets:
     runs-on: ubuntu-24.04

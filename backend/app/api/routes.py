@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import schemas
+from app.core.config import get_settings
 from app.core.cookies import cookie_name, set_cookie
 from app.core.security.tokens import new_token
 from app.db.session import get_db
@@ -15,9 +16,9 @@ router = APIRouter(prefix="/api")
 Db = Annotated[AsyncSession, Depends(get_db)]
 
 
-@router.get("/health", response_model=schemas.StatusOut)
+@router.get("/health", response_model=schemas.HealthOut)
 async def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "version": get_settings().version}
 
 
 @router.get("/ready", response_model=schemas.StatusOut)

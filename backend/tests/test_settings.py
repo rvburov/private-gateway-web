@@ -50,3 +50,11 @@ def test_key_versions_and_resource_limits():
 def test_origin_cannot_contain_credentials_or_path(origin):
     with pytest.raises(ValidationError):
         settings(public_origin=origin)
+
+
+def test_version_is_a_short_safe_token():
+    assert settings().version == "dev"
+    assert settings(version="4771282596c8").version == "4771282596c8"
+    for bad in ["", "x" * 41, "1.0 <script>", "a/b"]:
+        with pytest.raises(ValidationError):
+            settings(version=bad)

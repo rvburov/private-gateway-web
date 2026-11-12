@@ -58,4 +58,4 @@ iOS только проверенная ссылка App Store, когда ад�
 
 ## Служебные адреса
 
-`GET /api/health` -> `{status:'ok'}` (liveness), `GET /api/ready` проверяет БД -> 200 или 503.
+`GET /api/health` -> `{status:'ok', version:'<коммит сборки>'}` (liveness; `dev` вне сборки `deploy.sh`), `GET /api/ready` проверяет БД -> 200 или 503.

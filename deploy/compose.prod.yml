@@ -1,0 +1,178 @@
+# Рабочий стек на сервере AI Agent Capper (deploy/README.md). Наружу портов нет: домен и TLS
+# держит общий вход — Caddy capper (его Р31). Он передает запросы домена PGWEB_DOMAIN
+# контейнеру web по внутренней сети caddy-ingress и ставит X-Forwarded-For с IP посетителя.
+# Команды — из папки deploy на сервере: deploy/.env задает COMPOSE_FILE=compose.prod.yml.
+# Адаптация AI Agent Capper deploy/docker-compose.yml (docs/sources/infra-reuse.md).
+name: private-gateway-web
+
+x-logging: &logging
+  driver: local
+  options: {max-size: 10m, max-file: "3"}
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+x-api-env: &api-env
+  PGWEB_DATABASE_URL: postgresql+asyncpg://pgweb:${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в deploy/.env}@postgres:5432/pgweb
+  PGWEB_SECRET_KEY: ${PGWEB_SECRET_KEY:?задайте PGWEB_SECRET_KEY в deploy/.env}
+  PGWEB_MASTER_KEYS: ${PGWEB_MASTER_KEYS:?задайте PGWEB_MASTER_KEYS в deploy/.env}
+  PGWEB_PUBLIC_ORIGIN: https://${PGWEB_DOMAIN:?задайте PGWEB_DOMAIN в deploy/.env}
+  PGWEB_COOKIE_SECURE: "true"
+  PGWEB_DOWNLOAD_ROOT: /downloads
+
+x-api: &api
+  <<: *hardening
+  image: private-gateway-web-api:latest
+  build:
+    context: ..
+    dockerfile: deploy/api.Dockerfile
+    args:
+      # Хеш коммита задает deploy.sh; /api/health отвечает им
+      PGWEB_VERSION: ${PGWEB_VERSION:-dev}
+  environment: *api-env
+  restart: unless-stopped
+  networks: [backend]
+  volumes:
+    - releases:/downloads:ro
+  logging: *logging
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pgweb
+      POSTGRES_DB: pgweb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в deploy/.env}
+    volumes:
+      - database:/var/lib/postgresql
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U pgweb -d pgweb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+    logging: *logging
+
+  # Миграции — отдельный шаг deploy.sh до перезапуска api: если они упали, работает прежняя версия
+  migrate:
+    <<: *api
+    profiles: [tools]
+    restart: "no"
+    command: [alembic, upgrade, head]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  # Команды администратора: первый администратор и внесение выпусков клиента.
+  # Только эта команда может записать файл выпуска (том releases без :ro)
+  cli:
+    <<: *api
+    profiles: [tools]
+    restart: "no"
+    entrypoint: [python, -m, app.cli]
+    command: [--help]
+    volumes:
+      - releases:/downloads
+      - ${PGWEB_IMPORTS_DIR:-./imports}:/imports:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    <<: *api
+    command: [uvicorn, app.main:app, --host=0.0.0.0, --port=8000, --no-server-header, --no-access-log, --proxy-headers, "--forwarded-allow-ips=${PGWEB_EDGE_SUBNET:-172.31.247.0/28}"]
+    networks: [edge, backend]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  web:
+    <<: *hardening
+    image: private-gateway-web-ui:latest
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    tmpfs: [/data, /config, /tmp]
+    environment:
+      # Подсеть общего входа (сеть caddy-ingress): только от нее берется IP посетителя
+      PGWEB_TRUSTED_PROXIES: ${PGWEB_INGRESS_SUBNET:-10.204.0.0/24}
+    networks:
+      edge: {}
+      ingress:
+        # Имя, по которому Caddy capper находит сайт (файл сайта в его deploy/caddy-sites)
+        aliases: [private-gateway-web]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -Y, "off", -q, --spider, http://127.0.0.1:8080/]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+  backup:
+    build:
+      context: ./backup
+    image: private-gateway-web-backup:latest
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: pgweb
+      PGPASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в deploy/.env}
+      PGDATABASE: pgweb
+      BACKUP_AGE_RECIPIENTS: ${BACKUP_AGE_RECIPIENTS:-}
+      BACKUP_AGE_IDENTITY: ${BACKUP_AGE_IDENTITY:-}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+      BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-6}
+      BACKUP_KEEP_MANUAL: ${BACKUP_KEEP_MANUAL:-5}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-}
+      BACKUP_S3_PROVIDER: ${BACKUP_S3_PROVIDER:-Other}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-private-gateway-web}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+    volumes:
+      # Папка на диске сервера, а не том docker: docker compose down -v ее не сотрет
+      - ${BACKUP_LOCAL_DIR:-./backups}:/backups
+    # backend — база; egress — выход в интернет только для S3
+    networks: [backend, egress]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, /usr/local/bin/healthcheck.sh]
+      interval: 5m
+      timeout: 30s
+      retries: 1
+      start_period: 1m
+      start_interval: 5s
+    logging: *logging
+
+networks:
+  # Между web и api: API верит X-Forwarded-For только от адресов этой подсети
+  edge:
+    ipam:
+      config:
+        - subnet: ${PGWEB_EDGE_SUBNET:-172.31.247.0/28}
+  backend:
+    internal: true
+  egress: {}
+  # Общий вход сервера: сеть создает docker-compose.yml AI Agent Capper
+  ingress:
+    name: caddy-ingress
+    external: true
+
+volumes:
+  database:
+  releases:

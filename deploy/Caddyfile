@@ -1,7 +1,18 @@
-# Только локальный HTTP-стенд. Публичный домен и TLS настраиваются отдельным этапом.
+# Caddy сайта: статика, /api/* на FastAPI, заголовки безопасности. Слушает только HTTP :8080.
+# Локально (deploy/compose.yml) это сам стенд на 127.0.0.1:8080. На сервере TLS и домен
+# держит общий вход — Caddy AI Agent Capper (deploy/compose.prod.yml, deploy/README.md):
+# он передает запросы сюда по сети caddy-ingress и ставит X-Forwarded-For с IP посетителя.
 {
 	admin off
 	auto_https off
+	servers {
+		# IP посетителя берется из X-Forwarded-For только от адресов общего входа
+		# (PGWEB_TRUSTED_PROXIES, на сервере — подсеть caddy-ingress). Локально прокси нет:
+		# доверие только loopback контейнера, подмена заголовка не меняет адрес для лимитов
+		trusted_proxies static {$PGWEB_TRUSTED_PROXIES:127.0.0.1/32}
+		trusted_proxies_strict
+		client_ip_headers X-Forwarded-For
+	}
 }
 
 :8080 {
@@ -25,8 +36,9 @@
 			max_size 64KB
 		}
 		reverse_proxy api:8000 {
-			# Клиент не может назначить себе другой адрес для лимита попыток.
-			header_up X-Forwarded-For {remote_host}
+			# Клиент не может назначить себе другой адрес для лимита попыток: {client_ip} —
+			# адрес соединения либо, за доверенным общим входом, IP посетителя от него.
+			header_up X-Forwarded-For {client_ip}
 		}
 	}
 

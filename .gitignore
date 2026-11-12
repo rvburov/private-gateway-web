@@ -16,3 +16,7 @@ coverage/
 playwright-report/
 test-results/
 *.egg-info/
+
+# Рабочий сервер: копии базы и входящие файлы выпусков (deploy/README.md)
+deploy/backups/
+deploy/imports/

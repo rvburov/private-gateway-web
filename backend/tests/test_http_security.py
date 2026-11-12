@@ -52,3 +52,9 @@ async def test_private_routes_are_not_public(client):
     ):
         response = await client.get(path)
         assert response.status_code == 401, (path, response.text)
+
+
+async def test_health_reports_build_version(client):
+    response = await client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "version": "dev"}

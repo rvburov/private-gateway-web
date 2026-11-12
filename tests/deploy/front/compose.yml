@@ -1,0 +1,24 @@
+# Имитация AI Agent Capper для CI: проект capper, сервис caddy, порт 443, папка сайтов
+# /opt/ai_agent_capper/deploy/caddy-sites и внутренняя сеть caddy-ingress (10.204.0.0/24)
+name: capper
+services:
+  caddy:
+    build: .
+    image: capper-web:latest
+    environment:
+      CAPPER_DOMAIN: capper.localhost
+    volumes:
+      - /opt/ai_agent_capper/deploy/caddy-sites:/etc/caddy/sites:ro
+    ports: ["127.0.0.1:443:443"]
+    networks: [edge, ingress]
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 10.203.0.0/24
+  ingress:
+    name: caddy-ingress
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.204.0.0/24

@@ -1,0 +1,11 @@
+# Проверочная имитация общего входа AI Agent Capper (его deploy/Caddyfile, Р31): те же
+# import файлов сайтов и сеть caddy-ingress. Только для CI «Рабочий стек», не для сервера.
+{
+	skip_install_trust
+}
+
+import /etc/caddy/sites/*.caddy
+
+{$CAPPER_DOMAIN} {
+	respond "capper" 200
+}

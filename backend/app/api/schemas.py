@@ -131,6 +131,10 @@ class StatusOut(BaseModel):
     status: Literal["ok"]
 
 
+class HealthOut(StatusOut):
+    version: str
+
+
 class SetupOut(BaseModel):
     secret: str
     otpauth_uri: str

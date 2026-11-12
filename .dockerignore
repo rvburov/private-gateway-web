@@ -19,3 +19,5 @@ artifacts
 **/test-results
 **/playwright-report
 mockup
+deploy/backups
+deploy/imports

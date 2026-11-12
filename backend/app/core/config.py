@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     session_absolute_days: int = Field(default=30, ge=1, le=30)
     session_idle_days: int = Field(default=14, ge=1, le=30)
     download_root: Path = Path("downloads")
+    # Хеш коммита, из которого собран образ API: по нему deploy.sh видит, что отвечает новая версия
+    version: str = Field(default="dev", pattern=r"^[0-9A-Za-z._-]{1,40}$")
 
     @field_validator("database_url")
     @classmethod

@@ -27,6 +27,9 @@ COPY --chown=pgweb:pgweb backend/alembic.ini ./
 COPY --chown=pgweb:pgweb backend/alembic ./alembic
 COPY --chown=pgweb:pgweb backend/app ./app
 RUN python -m compileall -q app alembic
+# Хеш коммита сборки (deploy/deploy.sh); /api/health отвечает им, локально — dev
+ARG PGWEB_VERSION=dev
+ENV PGWEB_VERSION=$PGWEB_VERSION
 USER pgweb
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-server-header", "--no-access-log", "--no-proxy-headers"]
