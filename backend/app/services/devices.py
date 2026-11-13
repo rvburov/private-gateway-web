@@ -14,7 +14,7 @@ import re
 from datetime import datetime, timedelta
 
 from fastapi import Request
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -165,7 +165,15 @@ async def revoke_device(
     if not row or row.revoked_at is not None:
         raise AppError(404, "not_found")
     row.revoked_at = utcnow()
-    row.removed_by_admin = by_admin
+    if by_admin:
+        # Смену возвращают все записи этой установки: первая (new_device) осталась от прежних
+        # входов того же uid, а администратор видит только текущую
+        await db.execute(
+            update(AppDevice)
+            .where(AppDevice.user_id == user.id, AppDevice.device_uid == row.device_uid)
+            .values(removed_by_admin=True)
+            .execution_options(synchronize_session=False)
+        )
     auth.audit(db, "app_device.revoked", actor_id, user.id)
     await db.commit()
 

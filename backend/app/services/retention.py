@@ -18,7 +18,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, or_, text
+from sqlalchemy import delete, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -29,7 +29,9 @@ from app.db.models import (
     DownloadEvent,
     LoginChallenge,
     RateLimit,
+    RecoveryCode,
     TrustedDevice,
+    User,
     UserSession,
     utcnow,
 )
@@ -89,7 +91,46 @@ async def purge(db: AsyncSession, now: datetime | None = None) -> dict[str, int]
         result = await db.execute(statement.execution_options(synchronize_session=False))
         counts[name] = result.rowcount or 0
     await db.commit()
+    # Обычно уже сделано при запуске API; здесь — если запуск не смог (база была недоступна)
+    await clear_member_two_factor(db)
     return counts
+
+
+async def clear_member_two_factor(db: AsyncSession) -> int:
+    """Удаляет у участников данные 2FA (DECISIONS п. 11); возвращает число участников.
+
+    Без выхода из аккаунта: auth_version не меняется. Повторный вызов ничего не делает.
+    Идет при запуске API и в ежедневной очистке, а не в миграции: миграция применяется до
+    перезапуска API, и прежний код, которому нужна 2FA участника, в это окно еще отвечает.
+    """
+    members = select(User.id).where(User.role == "member")
+    await db.execute(delete(RecoveryCode).where(RecoveryCode.user_id.in_(members)))
+    await db.execute(delete(TrustedDevice).where(TrustedDevice.user_id.in_(members)))
+    await db.execute(delete(LoginChallenge).where(LoginChallenge.user_id.in_(members)))
+    result = await db.execute(
+        update(User)
+        .where(
+            User.role == "member",
+            or_(User.totp_enabled.is_(True), User.totp_secret_enc.is_not(None)),
+        )
+        .values(
+            totp_enabled=False, totp_secret_enc=None, totp_key_version=None, totp_last_step=None
+        )
+        .execution_options(synchronize_session=False)
+    )
+    await db.commit()
+    return result.rowcount or 0
+
+
+async def startup() -> None:
+    """Однократно при запуске API: 2FA участников. Ошибка не мешает API стартовать."""
+    try:
+        async with get_session_factory()() as db:
+            cleared = await clear_member_two_factor(db)
+        if cleared:
+            log.info("member two-factor cleared: %s", cleared)
+    except Exception:  # noqa: BLE001 — повторит ежедневная очистка
+        log.exception("member two-factor cleanup failed")
 
 
 def seconds_until(time_of_day: str, now: datetime) -> float:

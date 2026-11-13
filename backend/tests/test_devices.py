@@ -751,3 +751,32 @@ async def test_personal_device_limit_raises_the_change_limit(clients, db, totp_c
     overview = (await browser.get("/api/me/devices")).json()
     assert overview["device_changes"] == {"used": 5, "limit": 5, "days": 30}
     assert (await app_login(app, member, uid="install-kkkkkkkkkkkkkk05")).status_code == 409
+
+
+async def test_admin_removal_frees_the_change_after_a_relogin(clients, db, totp_clock):
+    """Установка входила повторно: удаление администратором все равно возвращает смену."""
+    from sqlalchemy import select
+
+    from app.db.models import AppDevice
+
+    admin_client = await clients(ip="198.51.100.121")
+    await register_user(admin_client, db, ADMIN, role="admin")
+    browser = await clients(ip="203.0.113.122")
+    member = await register_user(browser, db)
+    member_id = member["user"]["id"]
+    app = await clients(csrf=False, ip="203.0.113.123")
+    for index in range(3):
+        uid = f"install-kkkkkkkkkkkkkk{index:02d}"
+        assert (await app_login(app, member, uid=uid)).status_code == 200
+    # Повторный вход первой установки: новая запись, первая (new_device) отозвана
+    assert (await app_login(app, member, uid="install-kkkkkkkkkkkkkk00")).status_code == 200
+    assert (await browser.get("/api/me/devices")).json()["device_changes"]["used"] == 3
+    current = await db.scalar(
+        select(AppDevice).where(
+            AppDevice.device_uid == "install-kkkkkkkkkkkkkk00", AppDevice.revoked_at.is_(None)
+        )
+    )
+    removed = await admin_client.post(f"/api/admin/members/{member_id}/devices/{current.id}/revoke")
+    assert removed.status_code == 204
+    assert (await browser.get("/api/me/devices")).json()["device_changes"]["used"] == 2
+    assert (await app_login(app, member, uid="install-kkkkkkkkkkkkkk03")).status_code == 200

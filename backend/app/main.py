@@ -24,6 +24,8 @@ from app.services import retention
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ежедневная очистка ненужных данных идет в этом же процессе (services/retention.py)
+    # 2FA участников удаляет новый код, а не миграция (services/retention.py)
+    await retention.startup()
     purge = None
     if get_settings().purge_time != "off":
         purge = asyncio.create_task(retention.run_daily(), name="pgweb-purge")

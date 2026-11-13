@@ -1,7 +1,8 @@
-"""Миграция «2FA только у администраторов» на данных прежней схемы (DECISIONS п. 11).
+"""Переход на «2FA только у администраторов» на данных прежней схемы (DECISIONS п. 11).
 
-У участников удаляются данные 2FA, но вход на сайт и токены приложения продолжают
-действовать: auth_version не меняется. У администраторов ничего не меняется.
+Миграция не трогает 2FA: пока не перезапущен API, прежний код ее требует. Данные 2FA
+участников удаляет новый код при запуске (retention.clear_member_two_factor); вход на сайт
+и токены приложения продолжают действовать, у администраторов ничего не меняется.
 """
 
 import os
@@ -40,7 +41,7 @@ async def reset_schema(engine) -> None:
         await connection.execute(text("CREATE SCHEMA public"))
 
 
-async def test_upgrade_removes_member_two_factor_without_signing_anyone_out(db_factory):
+async def test_member_two_factor_is_cleared_by_new_code_without_signing_anyone_out(db_factory):
     engine = create_async_engine(os.environ["PGWEB_TEST_DATABASE_URL"])
     member_session, app_token = tokens.new_token(), tokens.new_token()
     now = datetime.now(UTC)
@@ -117,6 +118,21 @@ async def test_upgrade_removes_member_two_factor_without_signing_anyone_out(db_f
             )
 
         alembic("upgrade", "head")
+
+        # Сразу после миграции прежний код еще отвечает: 2FA участника должна быть на месте
+        async with engine.connect() as connection:
+            kept = (
+                await connection.execute(text("SELECT totp_enabled FROM users WHERE id = 2"))
+            ).scalar_one()
+            assert kept is True
+            codes = await connection.execute(
+                text("SELECT count(*) FROM recovery_codes WHERE user_id = 2")
+            )
+            assert codes.scalar_one() == 1
+
+        from app.services import retention
+
+        await retention.startup()
 
         async with engine.connect() as connection:
             fetch = connection.execute

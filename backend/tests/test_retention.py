@@ -72,7 +72,8 @@ async def names(db, model, column) -> set:
 
 
 async def test_purge_removes_only_records_that_are_no_longer_needed(db):
-    user = User(email="member@example.test", display_name="Member", password_hash="x")
+    # Администратор: доверенные браузеры и шаги входа теперь бывают только у него
+    user = User(email="admin@example.test", display_name="Admin", password_hash="x", role="admin")
     db.add(user)
     await db.flush()
     uid = user.id
