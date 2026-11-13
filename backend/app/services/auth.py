@@ -1,9 +1,14 @@
-"""Сценарии Capper на транзакциях PostgreSQL: вход, приглашения, 2FA и отзыв сеансов."""
+"""Сценарии Capper на транзакциях PostgreSQL: вход, приглашения, 2FA и отзыв сеансов.
+
+Двухфакторная проверка — только у администраторов (DECISIONS п. 11): участник входит по email
+и паролю, администратор — с кодом TOTP. Администратор без настроенной 2FA сеанса не получает:
+после пароля он проходит настройку приложения-аутентификатора.
+"""
 
 from datetime import timedelta
 
 from fastapi import Request, Response
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,6 +63,26 @@ async def revoke_access(db: AsyncSession, user: User) -> None:
     )
 
 
+def two_factor_satisfied():
+    """Условие действующего доступа: участнику 2FA не нужна, администратору — обязательна."""
+    return or_(User.role == "member", User.totp_enabled.is_(True))
+
+
+def needs_two_factor(user: User) -> bool:
+    # Любая роль, кроме участника, требует 2FA: новая роль не получит вход по одному паролю
+    return user.role != "member"
+
+
+async def clear_two_factor(db: AsyncSession, user: User) -> None:
+    """Удаляет 2FA: секрет, резервные коды и доверенные браузеры (участнику они не нужны)."""
+    user.totp_enabled = False
+    user.totp_secret_enc = None
+    user.totp_key_version = None
+    user.totp_last_step = None
+    await db.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
+    await db.execute(delete(TrustedDevice).where(TrustedDevice.user_id == user.id))
+
+
 async def current_user(db: AsyncSession, request: Request, *, touch: bool = True) -> User:
     token = request.cookies.get(cookie_name("session"), "")
     if not token or len(token) > 128:
@@ -73,7 +98,7 @@ async def current_user(db: AsyncSession, request: Request, *, touch: bool = True
             UserSession.last_seen_at > now - timedelta(days=get_settings().session_idle_days),
             UserSession.auth_version == User.auth_version,
             User.status == "active",
-            User.totp_enabled.is_(True),
+            two_factor_satisfied(),
         )
     )
     pair = result.one_or_none()
@@ -230,10 +255,12 @@ async def challenge_user(db: AsyncSession, request: Request) -> tuple[LoginChall
         .with_for_update()
         .execution_options(populate_existing=True)
     )
+    # Шаг кода — только для ролей с 2FA: участнику незачем держать незавершенный вход
     if (
         not user
         or not challenge
         or user.status != "active"
+        or not needs_two_factor(user)
         or challenge.auth_version != user.auth_version
         or challenge.consumed_at
         or challenge.expires_at <= utcnow()
@@ -263,6 +290,8 @@ async def password_login(
         user.password_hash = await passwords.hash_password_async(password)
     await limits.clear("login-user", identity + ":" + client_ip(request))
     await limits.clear("login-ip", client_ip(request))
+    if not needs_two_factor(user):
+        return await new_session(db, user, request, response)
     device = request.cookies.get(cookie_name("device"), "")
     if device and user.totp_enabled:
         trusted = await db.scalar(
@@ -323,6 +352,9 @@ async def register(db: AsyncSession, request: Request, response: Response, body)
         await db.rollback()
         raise AppError(409, "account_exists") from None
     audit(db, "registration.completed", user.id, invite.id)
+    if not needs_two_factor(user):
+        # Участник входит сразу; приглашение администратора ведет к обязательной настройке 2FA
+        return await new_session(db, user, request, response)
     return await new_challenge(db, user, request, response)
 
 

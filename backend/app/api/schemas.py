@@ -114,6 +114,8 @@ class AppDeviceIn(Input):
 
 
 class AppLoginIn(Input):
+    """Код нужен только администратору; участнику присланный код не проверяется (клиенты 0.2.0)."""
+
     email: Text
     password: Password
     code: Totp | None = None
@@ -121,10 +123,21 @@ class AppLoginIn(Input):
     device: AppDeviceIn
 
     @model_validator(mode="after")
-    def one_code(self) -> "AppLoginIn":
-        if (self.code is None) == (self.recovery_code is None):
+    def at_most_one_code(self) -> "AppLoginIn":
+        if self.code is not None and self.recovery_code is not None:
             raise ValueError("code_or_recovery_code")
         return self
+
+
+class AdminCodeIn(Input):
+    """Подтверждение своего действия: администратору нужен код 2FA, участнику — нет."""
+
+    code: Totp | None = None
+
+
+class PasswordChangeIn(AdminCodeIn):
+    current_password: Password
+    new_password: Password
 
 
 class UserOut(BaseModel):
@@ -251,11 +264,19 @@ class SessionOut(BaseModel):
     current: bool
 
 
+class DeviceChangesOut(BaseModel):
+    used: int
+    limit: int
+    days: int
+
+
 class DevicesOut(BaseModel):
     sessions: list[SessionOut]
     devices: list[AppDeviceOut]
     session_limit: int
     device_limit: int
+    # Новые устройства приложения за окно смены: used из limit за days дней
+    device_changes: DeviceChangesOut
 
 
 class DownloadUserOut(BaseModel):

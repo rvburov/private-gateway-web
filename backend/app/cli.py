@@ -8,27 +8,17 @@ import os
 import re
 import sys
 import tempfile
-from datetime import timedelta
 from pathlib import Path
 
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.schemas import RegisterIn
 from app.core.config import get_settings
 from app.core.security.passwords import hash_password_async, validate_password_policy
-from app.db.models import (
-    AccessCode,
-    AuditEvent,
-    LoginChallenge,
-    RateLimit,
-    Release,
-    TrustedDevice,
-    User,
-    UserSession,
-    utcnow,
-)
+from app.db.models import AuditEvent, Release, User
 from app.db.session import get_engine, get_session_factory
+from app.services import retention
 from app.services.downloads import PLATFORMS, app_store_url
 
 
@@ -50,7 +40,9 @@ def parser() -> argparse.ArgumentParser:
     store.add_argument("--version", required=True)
     disable = commands.add_parser("disable-release")
     disable.add_argument("--platform", choices=PLATFORMS, required=True)
-    commands.add_parser("prune", help="Удалить истекшие временные записи и аудит старше90дней")
+    commands.add_parser(
+        "purge", aliases=["prune"], help="Удалить ненужные записи (то же делает API раз в сутки)"
+    )
     return cli
 
 
@@ -149,13 +141,11 @@ async def run(args: argparse.Namespace) -> None:
             )
             await db.commit()
             print("Release disabled")
-        elif args.command == "prune":
-            now = utcnow()
-            for model in (RateLimit, UserSession, TrustedDevice, LoginChallenge, AccessCode):
-                await db.execute(delete(model).where(model.expires_at < now))
-            await db.execute(delete(AuditEvent).where(AuditEvent.at < now - timedelta(days=90)))
-            await db.commit()
-            print("Expired records pruned")
+        elif args.command in ("purge", "prune"):
+            counts = await retention.purge(db)
+            if not counts:
+                raise ValueError("Another purge is running; try again later")
+            print("Purged: " + ", ".join(f"{name} {count}" for name, count in counts.items()))
 
 
 def main() -> None:

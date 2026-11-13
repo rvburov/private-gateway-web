@@ -31,9 +31,13 @@ def registration(code, email="member@example.test", **extra):
 
 
 async def register_user(client, db, email="member@example.test", *, role="member"):
+    """Участник входит сразу после регистрации; администратор настраивает 2FA."""
     code, _ = await invite(db, email, role=role)
     response = await client.post("/api/auth/register", json=registration(code, email))
     assert response.status_code == 200, response.text
+    if role == "member":
+        assert response.json()["status"] == "ok", response.text
+        return {"user": response.json()["user"], "password": PASSWORD}
     assert response.json()["status"] == "totp_setup_required"
     setup = await client.post("/api/auth/2fa/setup", json={})
     assert setup.status_code == 200, setup.text

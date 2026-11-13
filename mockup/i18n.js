@@ -24,6 +24,8 @@
     if ((match = core.match(/^Срок действия: (.+)$/))) return `Expires after: ${english(match[1])}`;
     if ((match = core.match(/^Private Gateway Web · (.+)$/))) return `Private Gateway Web · ${english(match[1])}`;
     if ((match = core.match(/^(\d+) из (\d+) занято$/))) return `${match[1]} of ${match[2]} in use`;
+    if ((match = core.match(/^Новых устройств за (\d+) дней: (\d+) из (\d+)$/))) return `New devices in ${match[1]} days: ${match[2]} of ${match[3]}`;
+    if ((match = core.match(/^Авто \((.+)\)$/))) return `Auto (${english(match[1])})`;
     if ((match = core.match(/^(\d+) из (\d+) · лимит по умолчанию$/))) return `${match[1]} of ${match[2]} · default limit`;
     if ((match = core.match(/^Последняя активность: (.+?) · Сеть (.+)$/))) return `Last active: ${english(match[1])} · Network ${match[2]}`;
     if ((match = core.match(/^(.+) · Приложение (.+) · Последняя активность: (.+?) · Сеть (.+)$/))) return `${match[1]} · App ${match[2]} · Last active: ${english(match[3])} · Network ${match[4]}`;

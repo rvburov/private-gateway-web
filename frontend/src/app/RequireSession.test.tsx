@@ -43,6 +43,17 @@ describe('session and role routing', () => {
     page(true);
     expect(screen.getByText('Protected content')).toBeInTheDocument();
   });
+  it('keeps an administrator without 2FA out of administration', () => {
+    state.user = { id: 3, email: 'new-admin@example.test', display_name: 'Synthetic', role: 'admin', status: 'active', totp_enabled: false, created_at: '2026-01-01T00:00:00Z' };
+    page(true);
+    expect(screen.getByText('Downloads route')).toBeInTheDocument();
+    expect(screen.queryByText('Protected content')).not.toBeInTheDocument();
+  });
+  it('lets a member without 2FA into the account', () => {
+    state.user = { id: 4, email: 'member@example.test', display_name: 'Synthetic', role: 'member', status: 'active', totp_enabled: false, created_at: '2026-01-01T00:00:00Z' };
+    page();
+    expect(screen.getByText('Protected content')).toBeInTheDocument();
+  });
   it('offers a retry on an unavailable API instead of pretending the user is signed out', () => {
     state.sessionError = new Error('Synthetic network failure');
     page();

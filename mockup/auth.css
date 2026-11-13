@@ -338,3 +338,7 @@ html[data-theme="dark"] .auth-shell {
   .auth-shell .login-m-invite { font-size: 12px; color: var(--fg-3); }
   .auth-shell .login-m-hero .auth-network-background { opacity: .65; }
 }
+
+/* Макет: роль для просмотра входа (2026-11-13). В рабочем сайте роль определяет сервер. */
+.auth-demo-role{display:grid;gap:7px;margin-top:6px;padding-top:16px;border-top:1px dashed var(--line-strong)}
+.auth-demo-role .segmented-control{justify-self:start}

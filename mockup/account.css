@@ -196,3 +196,37 @@
  .ac-device-info {flex:1 1 calc(100% - 50px)}
  .ac-device-item > .btn {margin-left:50px}
 }
+
+/* Система посетителя, Android, свой пароль, удаление (2026-11-13) */
+.ac-ios.is-featured {border-color:color-mix(in srgb,var(--accent) 42%,var(--line))}
+.ac-ios.is-first {margin:0 0 18px}
+.ac-ios h3 .ac-tag {margin-left:8px;vertical-align:middle}
+.ac-download-card>.ac-install-hint {display:flex;align-items:flex-start;gap:7px;width:100%;min-height:0;margin:12px 0 0;font-size:11px;line-height:1.55;color:var(--fg-2)}
+.ac-install-hint svg {flex:none;width:14px;height:14px;margin-top:1px;color:var(--os,var(--accent))}
+.ac-security-card {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 24px;align-items:center;padding:20px 24px;margin-bottom:18px}
+.ac-security-card h3 {font:600 15px var(--font-display);margin:0 0 4px;letter-spacing:-.01em}
+.ac-security-card p {font-size:12px;color:var(--fg-3);margin:0;line-height:1.55}
+.ac-security-actions {display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.ac-security-actions .btn {font-size:12px;min-height:40px;gap:8px}
+.ac-security-actions .btn svg {width:15px;height:15px}
+.ac-security-card .ac-security-done {grid-column:1/-1;display:flex;align-items:center;gap:8px;color:var(--accent-ink)}
+.ac-security-done svg {width:15px;height:15px}
+.ac-device-changes {font-size:11px;line-height:1.55;color:var(--fg-3);margin:-4px 0 12px}
+.ac-device-changes strong {color:var(--fg-2);font-weight:600}
+.ac-2fa.is-password svg {color:var(--fg-3)}
+.ac-member-danger {padding-top:16px;border-top:1px solid var(--line)}
+.btn.ac-danger-text {color:var(--bad);border-color:color-mix(in srgb,var(--bad) 35%,var(--line))}
+.btn.ac-danger-text svg {width:14px;height:14px}
+.ac-os-preview {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-8px 0 18px;font-size:11px;color:var(--fg-3)}
+.ac-os-preview .ac-filter {flex-wrap:wrap}
+@media(max-width:760px){
+ .ac-security-card {grid-template-columns:1fr;padding:17px 16px}
+ .ac-security-actions {justify-content:stretch}
+ .ac-security-actions .btn {flex:1 1 100%;justify-content:center}
+ .ac-download-card>.ac-install-hint {font-size:10px}
+}
+@media(max-width:520px){
+ .ac-download-card>.ac-install-hint {grid-column:1/-1;font-size:11px}
+ .ac-download-card>.ac-checksum {grid-column:1/-1}
+ .ac-ios h3 .ac-tag {display:inline-flex;font-size:8px}
+}

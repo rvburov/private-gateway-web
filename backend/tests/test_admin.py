@@ -7,15 +7,20 @@ from tests.helpers import PASSWORD, password_login, register_user
 
 async def test_member_cannot_administer_even_by_direct_request(client, db):
     user = await register_user(client, db)
-    assert (await client.get("/api/admin/members")).status_code == 403
-    assert (await client.get("/api/admin/invites")).status_code == 403
+    path = f"/api/admin/members/{user['user']['id']}"
     body = {"email": "new@example.test", "role": "admin", "expires_in_days": 7, "code": "123456"}
-    assert (await client.post("/api/admin/invites", json=body)).status_code == 403
-    assert (
-        await client.patch(
-            f"/api/admin/members/{user['user']['id']}", json={"role": "admin", "code": "123456"}
-        )
-    ).status_code == 403
+    # Отказ по роли (forbidden), а не только по отсутствию 2FA у участника
+    for response in (
+        await client.get("/api/admin/members"),
+        await client.get("/api/admin/invites"),
+        await client.get("/api/admin/downloads"),
+        await client.post("/api/admin/invites", json=body),
+        await client.patch(path, json={"role": "admin", "code": "123456"}),
+        await client.post(f"{path}/delete", json={"code": "123456"}),
+        await client.post("/api/admin/invites/1/delete", json={"code": "123456"}),
+    ):
+        assert response.status_code == 403, response.text
+        assert response.json()["error"]["code"] == "forbidden"
 
 
 async def test_admin_invite_returns_secret_only_once(client, db, totp_clock):
@@ -79,8 +84,9 @@ async def test_access_revocation_is_immediate_and_does_not_resurrect_sessions(
     unblocked = await client.patch(path, json={"status": "active", "code": totp_clock(admin)})
     assert unblocked.status_code == 200, unblocked.text
     assert (await browser.get("/api/me")).status_code == 401
+    # Возвращенный доступ требует нового входа; участник входит паролем
     relogin = await password_login(browser)
-    assert relogin.status_code == 200 and relogin.json()["status"] == "totp_required"
+    assert relogin.status_code == 200 and relogin.json()["status"] == "ok"
 
 
 async def test_admin_cannot_remove_own_access(client, db, totp_clock):
@@ -97,7 +103,7 @@ async def test_admin_cannot_remove_own_access(client, db, totp_clock):
     assert (await client.get("/api/me")).status_code == 200
 
 
-async def test_reset_code_is_one_use_revokes_sessions_and_preserves_two_factor(
+async def test_reset_code_is_one_use_and_revokes_sessions(
     client,
     clients,
     db,
@@ -119,8 +125,30 @@ async def test_reset_code_is_one_use_revokes_sessions_and_preserves_two_factor(
     assert (await browser.post("/api/auth/reset", json=body)).status_code == 400
     assert (await password_login(browser, password=PASSWORD)).status_code == 401
     login = await password_login(browser, password=new_password)
+    assert login.status_code == 200 and login.json()["status"] == "ok"
+
+
+async def test_admin_password_reset_preserves_two_factor(client, clients, db, totp_clock):
+    first = await register_user(client, db, "admin@example.test", role="admin")
+    other_browser = await clients(ip="192.0.2.25")
+    other = await register_user(other_browser, db, "second-admin@example.test", role="admin")
+    response = await client.post(
+        f"/api/admin/members/{other['user']['id']}/reset-code", json={"code": totp_clock(first)}
+    )
+    assert response.status_code == 200, response.text
+    new_password = "new-gateway-test-password"
+    reset = await other_browser.post(
+        "/api/auth/reset",
+        json={
+            "email": "second-admin@example.test",
+            "code": response.json()["code"],
+            "new_password": new_password,
+        },
+    )
+    assert reset.status_code == 200, reset.text
+    login = await password_login(other_browser, "second-admin@example.test", new_password)
     assert login.status_code == 200 and login.json()["status"] == "totp_required"
-    fresh = await db.get(User, member["user"]["id"], populate_existing=True)
+    fresh = await db.get(User, other["user"]["id"], populate_existing=True)
     assert fresh.totp_enabled
 
 

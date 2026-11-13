@@ -1,4 +1,8 @@
-"""Журнал скачиваний, лимит входов на сайт и устройства приложения (вход по аккаунту сайта)."""
+"""Журнал скачиваний, лимит входов на сайт и устройства приложения (вход по аккаунту сайта).
+
+Участник входит в приложение паролем (присланный код не проверяется, клиенты 0.2.0 шлют его
+всегда), администратор — паролем и кодом 2FA (DECISIONS п. 11).
+"""
 
 import hashlib
 
@@ -17,13 +21,15 @@ def device(uid: str = "install-0000000000000001", **changes) -> dict:
     return value
 
 
-async def app_login(client, user, code, *, uid="install-0000000000000001", email=None, **extra):
-    body = {
-        "email": email or user["user"]["email"],
-        "password": PASSWORD,
-        "code": code,
-        "device": device(uid),
-    }
+ADMIN = "admin@example.test"
+
+
+async def app_login(
+    client, user, code=None, *, uid="install-0000000000000001", email=None, **extra
+):
+    body = {"email": email or user["user"]["email"], "password": PASSWORD, "device": device(uid)}
+    if code is not None:
+        body["code"] = code
     body.update(extra)
     return await client.post("/api/app/login", json=body)
 
@@ -35,6 +41,9 @@ def bearer(token: str) -> dict:
 async def second_session(clients, db, user, totp_clock, ip: str):
     browser = await clients(ip=ip)
     login = await password_login(browser, user["user"]["email"])
+    if "secret" not in user:
+        assert login.json()["status"] == "ok", login.text
+        return browser
     assert login.json()["status"] == "totp_required", login.text
     done = await browser.post("/api/auth/2fa", json={"code": totp_clock(user)})
     assert done.status_code == 200, done.text
@@ -155,7 +164,7 @@ async def test_app_login_status_and_logout_use_only_bearer_token(clients, db, to
     user = await register_user(browser, db)
     app = await clients(csrf=False, ip="198.51.100.5")
     app.headers.pop("Origin")
-    login = await app_login(app, user, totp_clock(user))
+    login = await app_login(app, user)
     assert login.status_code == 200, login.text
     token = login.json()["token"]
     assert login.json()["device"]["platform"] == "windows"
@@ -170,9 +179,9 @@ async def test_app_login_status_and_logout_use_only_bearer_token(clients, db, to
     assert (await app.get("/api/app/status", headers=bearer(token))).status_code == 401
 
 
-async def test_app_login_requires_password_and_second_factor(clients, db, totp_clock):
+async def test_admin_app_login_requires_password_and_second_factor(clients, db, totp_clock):
     browser = await clients()
-    user = await register_user(browser, db)
+    user = await register_user(browser, db, ADMIN, role="admin")
     app = await clients(csrf=False, ip="198.51.100.6")
     wrong_password = await app.post(
         "/api/app/login",
@@ -190,34 +199,81 @@ async def test_app_login_requires_password_and_second_factor(clients, db, totp_c
     # Тот же код второй раз не принимается
     replay = await app_login(app, user, code, uid="install-0000000000000002")
     assert replay.status_code == 400
-    missing = await app.post(
+    both = await app_login(app, user, "123456", recovery_code=user["recovery_codes"][0])
+    assert both.status_code == 422
+
+
+async def test_admin_app_login_without_code_asks_for_it_and_spends_nothing(clients, db, totp_clock):
+    browser = await clients()
+    user = await register_user(browser, db, ADMIN, role="admin")
+    app = await clients(csrf=False, ip="198.51.100.16")
+    # Верный пароль без кода: 401 code_required, коды и попытки кода не тратятся
+    for _ in range(7):
+        missing = await app_login(app, user)
+        assert missing.status_code == 401
+        assert missing.json() == {"error": {"code": "code_required"}}
+    wrong_password = await app.post(
         "/api/app/login",
-        json={"email": user["user"]["email"], "password": PASSWORD, "device": device()},
+        json={"email": ADMIN, "password": "not-the-password", "device": device()},
     )
-    assert missing.status_code == 422
+    assert wrong_password.json()["error"]["code"] == "invalid_credentials"
+    assert (await app_login(app, user, totp_clock(user))).status_code == 200
+    from sqlalchemy import func, select
+
+    from app.db.models import RecoveryCode
+
+    unused = await db.scalar(
+        select(func.count()).select_from(RecoveryCode).where(RecoveryCode.used_at.is_(None))
+    )
+    assert unused == 8
 
 
-async def test_app_login_needs_two_factor_set_up_on_the_site(clients, db):
+async def test_member_app_login_ignores_any_code(clients, db):
+    browser = await clients()
+    user = await register_user(browser, db)
+    app = await clients(csrf=False, ip="198.51.100.17")
+    # Клиент 0.2.0 всегда присылает шесть цифр; участнику код не нужен и не проверяется
+    for index, extra in enumerate(
+        [{"code": "000000"}, {"code": "123456"}, {"recovery_code": "anything-goes"}, {}]
+    ):
+        uid = f"install-mmmmmmmmmmmmmm{index:02d}"
+        response = await app_login(app, user, uid=uid, **extra)
+        assert response.status_code in (200, 409), response.text
+        if index < 3:
+            assert response.status_code == 200, response.text
+    # Четвертое устройство уперлось в лимит 3, а не в проверку кода
+    assert response.json()["error"]["code"] in ("device_limit", "device_change_limit")
+
+
+async def test_admin_app_login_needs_two_factor_set_up_on_the_site(clients, db):
     from tests.helpers import invite, registration
 
     browser = await clients()
-    code, _ = await invite(db, "fresh@example.test")
+    code, _ = await invite(db, "fresh@example.test", role="admin")
     registered = await browser.post(
         "/api/auth/register", json=registration(code, "fresh@example.test")
     )
     assert registered.json()["status"] == "totp_setup_required"
     app = await clients(csrf=False, ip="198.51.100.7")
+    for extra in ({"code": "123456"}, {}):
+        response = await app.post(
+            "/api/app/login",
+            json={"email": "fresh@example.test", "password": PASSWORD, "device": device()} | extra,
+        )
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "setup_required"
+    # Участник сразу после регистрации входит в приложение без 2FA
+    member_code, _ = await invite(db, "fresh-member@example.test")
+    other = await clients(ip="198.51.100.27")
+    member = await other.post(
+        "/api/auth/register", json=registration(member_code, "fresh-member@example.test")
+    )
+    assert member.json()["status"] == "ok"
     response = await app.post(
         "/api/app/login",
-        json={
-            "email": "fresh@example.test",
-            "password": PASSWORD,
-            "code": "123456",
-            "device": device(),
-        },
+        json={"email": "fresh-member@example.test", "password": PASSWORD, "device": device()},
     )
-    assert response.status_code == 403
-    assert response.json()["error"]["code"] == "setup_required"
+    assert response.status_code == 200, response.text
 
 
 async def test_device_limit_and_relogin_on_the_same_device(clients, db, totp_clock, monkeypatch):
@@ -226,14 +282,14 @@ async def test_device_limit_and_relogin_on_the_same_device(clients, db, totp_clo
     browser = await clients()
     user = await register_user(browser, db)
     app = await clients(csrf=False, ip="198.51.100.8")
-    one = (await app_login(app, user, totp_clock(user), uid="install-aaaaaaaaaaaaaaa1")).json()
-    two = await app_login(app, user, totp_clock(user), uid="install-aaaaaaaaaaaaaaa2")
+    one = (await app_login(app, user, uid="install-aaaaaaaaaaaaaaa1")).json()
+    two = await app_login(app, user, uid="install-aaaaaaaaaaaaaaa2")
     assert two.status_code == 200
-    third = await app_login(app, user, totp_clock(user), uid="install-aaaaaaaaaaaaaaa3")
+    third = await app_login(app, user, uid="install-aaaaaaaaaaaaaaa3")
     assert third.status_code == 409
     assert third.json()["error"]["code"] == "device_limit"
     # Повторный вход того же устройства лимит не тратит, а прежний токен гаснет
-    again = await app_login(app, user, totp_clock(user), uid="install-aaaaaaaaaaaaaaa1")
+    again = await app_login(app, user, uid="install-aaaaaaaaaaaaaaa1")
     assert again.status_code == 200
     assert (await app.get("/api/app/status", headers=bearer(one["token"]))).status_code == 401
     assert (
@@ -250,13 +306,13 @@ async def test_member_removes_device_and_frees_the_slot(clients, db, totp_clock,
     browser = await clients()
     user = await register_user(browser, db)
     app = await clients(csrf=False, ip="198.51.100.9")
-    token = (await app_login(app, user, totp_clock(user))).json()["token"]
-    blocked = await app_login(app, user, totp_clock(user), uid="install-bbbbbbbbbbbbbbbb")
+    token = (await app_login(app, user)).json()["token"]
+    blocked = await app_login(app, user, uid="install-bbbbbbbbbbbbbbbb")
     assert blocked.status_code == 409
     device_id = (await browser.get("/api/me/devices")).json()["devices"][0]["id"]
     assert (await browser.post(f"/api/me/devices/{device_id}/revoke")).status_code == 204
     assert (await app.get("/api/app/status", headers=bearer(token))).status_code == 401
-    freed = await app_login(app, user, totp_clock(user), uid="install-bbbbbbbbbbbbbbbb")
+    freed = await app_login(app, user, uid="install-bbbbbbbbbbbbbbbb")
     assert freed.status_code == 200
 
 
@@ -269,10 +325,8 @@ async def test_admin_sees_and_revokes_member_devices_and_blocking_logs_app_out(
     member = await register_user(member_client, db)
     member_id = member["user"]["id"]
     app = await clients(csrf=False, ip="203.0.113.31")
-    first = (await app_login(app, member, totp_clock(member))).json()["token"]
-    second = (
-        await app_login(app, member, totp_clock(member), uid="install-cccccccccccccccc")
-    ).json()["token"]
+    first = (await app_login(app, member)).json()["token"]
+    second = (await app_login(app, member, uid="install-cccccccccccccccc")).json()["token"]
     assert (await member_client.get(f"/api/admin/members/{member_id}/devices")).status_code == 403
     overview = (await admin_client.get(f"/api/admin/members/{member_id}/devices")).json()
     assert len(overview["devices"]) == 2 and len(overview["sessions"]) == 1
@@ -314,7 +368,7 @@ async def test_admin_sets_personal_device_limit(clients, db, totp_clock, monkeyp
     app = await clients(csrf=False, ip="203.0.113.41")
     for index in range(3):
         uid = f"install-dddddddddddddd{index:02d}"
-        assert (await app_login(app, member, totp_clock(member), uid=uid)).status_code == 200
+        assert (await app_login(app, member, uid=uid)).status_code == 200
     reset = await admin_client.patch(path, json={"device_limit": None, "code": totp_clock(admin)})
     assert reset.status_code == 200 and reset.json()["device_limit"] is None
     member_limit = (await member_client.get("/api/me/devices")).json()["device_limit"]
@@ -327,7 +381,7 @@ async def test_app_password_change_invalidates_device_token(clients, db, totp_cl
     member_client = await clients(ip="203.0.113.50")
     member = await register_user(member_client, db)
     app = await clients(csrf=False, ip="203.0.113.51")
-    token = (await app_login(app, member, totp_clock(member))).json()["token"]
+    token = (await app_login(app, member)).json()["token"]
     reset = await admin_client.post(
         f"/api/admin/members/{member['user']['id']}/reset-code", json={"code": totp_clock(admin)}
     )
@@ -354,7 +408,7 @@ async def test_device_token_dies_when_auth_version_changes(clients, db, totp_clo
     browser = await clients()
     user = await register_user(browser, db)
     app = await clients(csrf=False, ip="198.51.100.60")
-    token = (await app_login(app, user, totp_clock(user))).json()["token"]
+    token = (await app_login(app, user)).json()["token"]
     assert (await app.get("/api/app/status", headers=bearer(token))).status_code == 200
     await db.execute(
         update(User).where(User.id == user["user"]["id"]).values(auth_version=User.auth_version + 1)
@@ -374,7 +428,7 @@ async def test_blocking_marks_every_app_device_revoked(clients, db, totp_clock):
     member_client = await clients(ip="203.0.113.61")
     member = await register_user(member_client, db)
     app = await clients(csrf=False, ip="203.0.113.62")
-    assert (await app_login(app, member, totp_clock(member))).status_code == 200
+    assert (await app_login(app, member)).status_code == 200
     blocked = await admin_client.patch(
         f"/api/admin/members/{member['user']['id']}",
         json={"status": "blocked", "code": totp_clock(admin)},
@@ -393,7 +447,7 @@ async def test_blocking_marks_every_app_device_revoked(clients, db, totp_clock):
 async def test_ended_session_also_forgets_the_trusted_browser(clients, db, totp_clock):
     """Завершенный вход не дает войти снова одним паролем через «запомнить устройство»."""
     owner = await clients(ip="192.0.2.71")
-    user = await register_user(owner, db)
+    user = await register_user(owner, db, ADMIN, role="admin")
     stranger = await clients(ip="192.0.2.72")
     assert (await password_login(stranger, user["user"]["email"])).json()["status"] == (
         "totp_required"
@@ -417,7 +471,7 @@ async def test_evicted_session_also_forgets_the_trusted_browser(
     monkeypatch.setenv("PGWEB_SESSION_LIMIT", "1")
     get_settings.cache_clear()
     first = await clients(ip="192.0.2.73")
-    user = await register_user(first, db)
+    user = await register_user(first, db, ADMIN, role="admin")
     await password_login(first, user["user"]["email"])
     remembered = await first.post(
         "/api/auth/2fa", json={"code": totp_clock(user), "remember_device": True}
@@ -437,7 +491,7 @@ async def test_device_limit_refusal_still_spends_the_code_and_keeps_site_login_o
     monkeypatch.setenv("PGWEB_DEVICE_LIMIT", "1")
     get_settings.cache_clear()
     browser = await clients(ip="198.51.100.70")
-    user = await register_user(browser, db)
+    user = await register_user(browser, db, ADMIN, role="admin")
     app = await clients(csrf=False, ip="198.51.100.71")
     assert (await app_login(app, user, totp_clock(user))).status_code == 200
     code = totp_clock(user)
@@ -477,11 +531,13 @@ async def test_app_login_is_rate_limited(clients, db, totp_clock):
     }
     statuses = [(await app.post("/api/app/login", json=body)).status_code for _ in range(6)]
     assert statuses == [401] * 5 + [429]
-    # Верный пароль и неверные коды: перебор кода тоже ограничен
+    # Администратор: верный пароль и неверные коды — перебор кода тоже ограничен
+    admin_browser = await clients(ip="198.51.100.83")
+    admin = await register_user(admin_browser, db, ADMIN, role="admin")
     other = await clients(csrf=False, ip="198.51.100.82")
-    codes = [(await app_login(other, user, "000000")).status_code for _ in range(6)]
+    codes = [(await app_login(other, admin, "000000")).status_code for _ in range(6)]
     assert codes == [400] * 5 + [429]
-    assert (await app_login(other, user, totp_clock(user))).status_code == 429
+    assert (await app_login(other, admin, totp_clock(admin))).status_code == 429
 
 
 async def test_nobody_revokes_someone_elses_app_device(clients, db, totp_clock):
@@ -492,7 +548,7 @@ async def test_nobody_revokes_someone_elses_app_device(clients, db, totp_clock):
     second_client = await clients(ip="203.0.113.91")
     second = await register_user(second_client, db, "second@example.test")
     app = await clients(csrf=False, ip="203.0.113.92")
-    token = (await app_login(app, first, totp_clock(first))).json()["token"]
+    token = (await app_login(app, first)).json()["token"]
     device_id = (await first_client.get("/api/me/devices")).json()["devices"][0]["id"]
     assert (await second_client.post(f"/api/me/devices/{device_id}/revoke")).status_code == 404
     wrong_member = f"/api/admin/members/{second['user']['id']}/devices/{device_id}/revoke"
@@ -516,7 +572,7 @@ async def test_blocked_member_cannot_sign_in_to_the_app(clients, db, totp_clock)
     )
     assert blocked.status_code == 200
     app = await clients(csrf=False, ip="203.0.113.96")
-    refused = await app_login(app, member, totp_clock(member))
+    refused = await app_login(app, member, "123456")
     assert refused.status_code == 401
     assert refused.json()["error"]["code"] == "invalid_credentials"
     count = await db.scalar(
@@ -539,7 +595,7 @@ async def test_expired_device_token_is_refused_and_frees_the_slot(
     browser = await clients(ip="198.51.100.97")
     user = await register_user(browser, db)
     app = await clients(csrf=False, ip="198.51.100.98")
-    token = (await app_login(app, user, totp_clock(user))).json()["token"]
+    token = (await app_login(app, user)).json()["token"]
     await db.execute(
         update(AppDevice)
         .where(AppDevice.user_id == user["user"]["id"])
@@ -548,7 +604,7 @@ async def test_expired_device_token_is_refused_and_frees_the_slot(
     await db.commit()
     assert (await app.get("/api/app/status", headers=bearer(token))).status_code == 401
     assert (await browser.get("/api/me/devices")).json()["devices"] == []
-    other = await app_login(app, user, totp_clock(user), uid="install-gggggggggggggggg")
+    other = await app_login(app, user, uid="install-gggggggggggggggg")
     assert other.status_code == 200
 
 
@@ -584,3 +640,114 @@ async def test_download_log_skips_broken_files_and_pages_newest_first(
     (tmp_path / "releases" / stored.storage_name).write_bytes(b"broken")
     assert (await member_client.get("/api/downloads/windows/file")).status_code == 404
     assert (await admin_client.get("/api/admin/downloads")).json()["total"] == 3
+
+
+# --- Смена устройств: не больше 3 новых установок за 30 дней (DECISIONS п. 11) ---
+
+
+async def test_device_change_limit_counts_new_installations_only(clients, db):
+    browser = await clients(ip="203.0.113.110")
+    member = await register_user(browser, db)
+    app = await clients(csrf=False, ip="203.0.113.111")
+    uids = [f"install-hhhhhhhhhhhhhh{index:02d}" for index in range(4)]
+    for uid in uids[:3]:
+        assert (await app_login(app, member, uid=uid)).status_code == 200
+    overview = (await browser.get("/api/me/devices")).json()
+    assert overview["device_changes"] == {"used": 3, "limit": 3, "days": 30}
+    # Место освобождено, но три новых установки за 30 дней уже были: четвертая — отказ
+    first = overview["devices"][-1]
+    assert (await browser.post(f"/api/me/devices/{first['id']}/revoke")).status_code == 204
+    refused = await app_login(app, member, uid=uids[3])
+    assert refused.status_code == 409
+    assert refused.json() == {"error": {"code": "device_change_limit"}}
+    # Повторный вход знакомой установки — не смена, даже после удаления участником
+    for uid in uids[:3]:
+        again = await app_login(app, member, uid=uid)
+        assert again.status_code == 200, again.text
+    after = (await browser.get("/api/me/devices")).json()
+    assert after["device_changes"]["used"] == 3 and len(after["devices"]) == 3
+
+
+async def test_device_removed_by_admin_frees_a_device_change(clients, db, totp_clock):
+    from sqlalchemy import select
+
+    from app.db.models import AppDevice
+
+    admin_client = await clients(ip="198.51.100.111")
+    await register_user(admin_client, db, ADMIN, role="admin")
+    browser = await clients(ip="203.0.113.112")
+    member = await register_user(browser, db)
+    member_id = member["user"]["id"]
+    app = await clients(csrf=False, ip="203.0.113.113")
+    for index in range(3):
+        uid = f"install-iiiiiiiiiiiiii{index:02d}"
+        assert (await app_login(app, member, uid=uid)).status_code == 200
+    blocked = await app_login(app, member, uid="install-iiiiiiiiiiiiii03")
+    assert blocked.json()["error"]["code"] == "device_change_limit"
+    first = await db.scalar(
+        select(AppDevice).where(AppDevice.device_uid == "install-iiiiiiiiiiiiii00")
+    )
+    removed = await admin_client.post(f"/api/admin/members/{member_id}/devices/{first.id}/revoke")
+    assert removed.status_code == 204
+    assert (await browser.get("/api/me/devices")).json()["device_changes"]["used"] == 2
+    assert (await app_login(app, member, uid="install-iiiiiiiiiiiiii03")).status_code == 200
+    # Удаленное самим участником — по-прежнему в счете
+    fourth = await db.scalar(
+        select(AppDevice).where(AppDevice.device_uid == "install-iiiiiiiiiiiiii03")
+    )
+    assert (await browser.post(f"/api/me/devices/{fourth.id}/revoke")).status_code == 204
+    again = await app_login(app, member, uid="install-iiiiiiiiiiiiii04")
+    assert again.json()["error"]["code"] == "device_change_limit"
+
+
+async def test_device_change_window_and_count_are_configurable(clients, db, monkeypatch):
+    from datetime import timedelta
+
+    from sqlalchemy import update
+
+    from app.db.models import AppDevice, utcnow
+
+    monkeypatch.setenv("PGWEB_DEVICE_CHANGES", "1")
+    monkeypatch.setenv("PGWEB_DEVICE_CHANGE_DAYS", "7")
+    monkeypatch.setenv("PGWEB_DEVICE_LIMIT", "1")
+    get_settings.cache_clear()
+    browser = await clients(ip="203.0.113.114")
+    member = await register_user(browser, db)
+    app = await clients(csrf=False, ip="203.0.113.115")
+    assert (await app_login(app, member, uid="install-jjjjjjjjjjjjjj00")).status_code == 200
+    device_id = (await browser.get("/api/me/devices")).json()["devices"][0]["id"]
+    assert (await browser.post(f"/api/me/devices/{device_id}/revoke")).status_code == 204
+    refused = await app_login(app, member, uid="install-jjjjjjjjjjjjjj01")
+    assert refused.json()["error"]["code"] == "device_change_limit"
+    assert (await browser.get("/api/me/devices")).json()["device_changes"] == {
+        "used": 1,
+        "limit": 1,
+        "days": 7,
+    }
+    # Неделя прошла: прежняя смена больше не считается
+    await db.execute(
+        update(AppDevice)
+        .where(AppDevice.user_id == member["user"]["id"])
+        .values(created_at=utcnow() - timedelta(days=7, minutes=1))
+    )
+    await db.commit()
+    assert (await app_login(app, member, uid="install-jjjjjjjjjjjjjj01")).status_code == 200
+
+
+async def test_personal_device_limit_raises_the_change_limit(clients, db, totp_clock):
+    admin_client = await clients(ip="198.51.100.116")
+    admin = await register_user(admin_client, db, ADMIN, role="admin")
+    browser = await clients(ip="203.0.113.116")
+    member = await register_user(browser, db)
+    changed = await admin_client.patch(
+        f"/api/admin/members/{member['user']['id']}",
+        json={"device_limit": 5, "code": totp_clock(admin)},
+    )
+    assert changed.status_code == 200
+    app = await clients(csrf=False, ip="203.0.113.117")
+    for index in range(5):
+        uid = f"install-kkkkkkkkkkkkkk{index:02d}"
+        assert (await app_login(app, member, uid=uid)).status_code == 200, index
+    overview = (await browser.get("/api/me/devices")).json()
+    assert overview["device_changes"] == {"used": 5, "limit": 5, "days": 30}
+    assert (await app_login(app, member, uid="install-kkkkkkkkkkkkkk05")).status_code == 409

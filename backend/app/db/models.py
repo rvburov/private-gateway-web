@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     LargeBinary,
     String,
+    false,
     text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -171,6 +172,7 @@ class AppDevice(Base):
 
     Токен устройства хранится только хешем. Активное устройство — не отозвано, не истекло и
     выпущено при текущем auth_version участника (смена пароля или блокировка его гасят).
+    Отозванные записи хранятся до очистки: по ним считается лимит смены устройств.
     """
 
     __tablename__ = "app_devices"
@@ -199,3 +201,7 @@ class AppDevice(Base):
     last_seen_at: Mapped[datetime] = mapped_column(default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(index=True)
     revoked_at: Mapped[datetime | None]
+    # Первый вход этой установки (uid) в аккаунт: такие входы считает лимит смены устройств
+    new_device: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Удалено администратором: в лимите смены устройств участника не считается
+    removed_by_admin: Mapped[bool] = mapped_column(default=False, server_default=false())

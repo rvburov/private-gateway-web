@@ -16,7 +16,10 @@
 }
 
 :8080 {
-	encode zstd gzip
+	# Файлы клиента (/api/downloads/*) не сжимаются: телефон получает .apk байт в байт,
+	# с Content-Length и типом от API. Сжатие ничего не дает упакованным установщикам
+	@compressible not path /api/downloads/*
+	encode @compressible zstd gzip
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy same-origin

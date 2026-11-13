@@ -21,6 +21,11 @@ const errors: Record<string, [string, string]> = {
   no_changes: ['Nothing to change.', 'Нет изменений для сохранения.'],
   already_configured: ['Two-factor authentication is already enabled.', 'Двухфакторная аутентификация уже включена.'],
   setup_required: ['Set up two-factor authentication to continue.', 'Настройте двухфакторную аутентификацию для продолжения.'],
+  code_required: ['Enter the code from your authenticator app.', 'Введите код из приложения-аутентификатора.'],
+  invalid_password: ['The current password is incorrect.', 'Текущий пароль неверен.'],
+  password_changed: ['The password has already been changed in another window. Reload the page.', 'Пароль уже изменен в другом окне. Обновите страницу.'],
+  device_limit: ['All device places are taken. Remove a device to free a place.', 'Все места для устройств заняты. Удалите устройство, чтобы освободить место.'],
+  device_change_limit: ['Too many new devices recently. Try later or ask the administrator.', 'Слишком много новых устройств за последнее время. Попробуйте позже или обратитесь к администратору.'],
   network_error: ['Cannot reach the service. Check your connection and retry.', 'Не удалось связаться с сервисом. Проверьте соединение и повторите попытку.'],
   server_error: ['The service is temporarily unavailable. Try again later.', 'Сервис временно недоступен. Повторите попытку позже.'],
 };

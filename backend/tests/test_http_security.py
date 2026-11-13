@@ -58,3 +58,16 @@ async def test_health_reports_build_version(client):
     response = await client.get("/api/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "version": "dev"}
+
+
+async def test_new_account_and_deletion_routes_need_a_session(client):
+    """Смена пароля, выход везде и удаление: без входа — 401, ничего не меняется."""
+    for path, body in (
+        ("/api/me/password", {"current_password": "x" * 12, "new_password": "y" * 12}),
+        ("/api/me/sign-out-everywhere", {}),
+        ("/api/admin/members/1/delete", {"code": "123456"}),
+        ("/api/admin/invites/1/delete", {"code": "123456"}),
+    ):
+        response = await client.post(path, json=body)
+        assert response.status_code == 401, (path, response.text)
+        assert response.json()["error"]["code"] == "unauthorized"

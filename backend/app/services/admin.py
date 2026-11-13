@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from fastapi import Request
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas import InviteOut, UserOut
@@ -17,6 +17,9 @@ async def require_admin(db: AsyncSession, request: Request) -> User:
     user = await auth.current_user(db, request)
     if user.role != "admin":
         raise AppError(403, "forbidden")
+    # Сеанс администратора без 2FA не выдается; проверка здесь — второй рубеж для /admin/*
+    if not user.totp_enabled:
+        raise AppError(403, "setup_required")
     return user
 
 
@@ -58,6 +61,17 @@ async def members(
     return {"items": [UserOut.model_validate(x) for x in rows], "total": total}
 
 
+async def _check_last_admin(db: AsyncSession, user: User) -> None:
+    if user.role == "admin" and user.status == "active":
+        count = await db.scalar(
+            select(func.count())
+            .select_from(User)
+            .where(User.role == "admin", User.status == "active")
+        )
+        if count <= 1:
+            raise AppError(400, "last_admin")
+
+
 async def update_member(db: AsyncSession, request: Request, user_id: int, body) -> UserOut:
     actor = await confirm_admin(db, request, body.code)
     user = await db.scalar(select(User).where(User.id == user_id).with_for_update())
@@ -69,21 +83,16 @@ async def update_member(db: AsyncSession, request: Request, user_id: int, body) 
     if user.id == actor.id:
         raise AppError(400, "self_change_forbidden")
     next_role, next_status = body.role or user.role, body.status or user.status
-    if (
-        user.role == "admin"
-        and user.status == "active"
-        and (next_role != "admin" or next_status != "active")
-    ):
-        count = await db.scalar(
-            select(func.count())
-            .select_from(User)
-            .where(User.role == "admin", User.status == "active")
-        )
-        if count <= 1:
-            raise AppError(400, "last_admin")
+    if next_role != "admin" or next_status != "active":
+        await _check_last_admin(db, user)
     changed = next_role != user.role or next_status != user.status
+    demoted = user.role == "admin" and next_role == "member"
     user.role, user.status = next_role, next_status
+    if demoted:
+        # Участнику 2FA не нужна: данные второго фактора удаляются, как у всех участников
+        await auth.clear_two_factor(db, user)
     if changed:
+        # Назначенный администратор без 2FA при следующем входе сначала настроит ее
         await auth.revoke_access(db, user)
         auth.audit(db, "member.updated", actor.id, user.id)
     if limit_given and body.device_limit != user.device_limit:
@@ -93,6 +102,29 @@ async def update_member(db: AsyncSession, request: Request, user_id: int, body) 
     await db.commit()
     await limits.clear("admin-factor", str(actor.id))
     return UserOut.model_validate(user)
+
+
+async def delete_member(db: AsyncSession, request: Request, user_id: int, code: str) -> None:
+    """Полное удаление участника: аккаунт и все, что к нему относится.
+
+    Каскадом удаляются входы, доверенные браузеры, шаги входа, резервные коды, устройства
+    приложения и коды сброса; отдельно — приглашения на его почту. Журнал скачиваний
+    сохраняет записи без участника (user_id = NULL), журнал действий — только номера.
+    """
+    actor = await confirm_admin(db, request, code)
+    user = await db.scalar(select(User).where(User.id == user_id).with_for_update())
+    if not user:
+        raise AppError(404, "not_found")
+    if user.id == actor.id:
+        raise AppError(400, "self_change_forbidden")
+    await _check_last_admin(db, user)
+    await db.execute(
+        delete(AccessCode).where(AccessCode.kind == "invite", AccessCode.email == user.email)
+    )
+    await db.execute(delete(User).where(User.id == user.id))
+    auth.audit(db, "member.deleted", actor.id, user_id)
+    await db.commit()
+    await limits.clear("admin-factor", str(actor.id))
 
 
 async def invites(db: AsyncSession, request: Request, limit: int, offset: int) -> dict:
@@ -149,13 +181,27 @@ async def revoke_invite(db: AsyncSession, request: Request, invite_id: int, code
     return InviteOut.model_validate(invite)
 
 
+async def delete_invite(db: AsyncSession, request: Request, invite_id: int, code: str) -> None:
+    """Удаляет приглашение в любом состоянии; действующее перестает работать сразу."""
+    actor = await confirm_admin(db, request, code)
+    invite = await db.scalar(
+        select(AccessCode)
+        .where(AccessCode.id == invite_id, AccessCode.kind == "invite")
+        .with_for_update()
+    )
+    if not invite:
+        raise AppError(404, "not_found")
+    await db.execute(delete(AccessCode).where(AccessCode.id == invite.id))
+    auth.audit(db, "invite.deleted", actor.id, invite_id)
+    await db.commit()
+    await limits.clear("admin-factor", str(actor.id))
+
+
 async def reset_code(db: AsyncSession, request: Request, user_id: int, code: str) -> dict:
     actor = await confirm_admin(db, request, code)
     user = await db.scalar(select(User).where(User.id == user_id).with_for_update())
     if not user or user.status != "active":
         raise AppError(404, "not_found")
-    from sqlalchemy import update
-
     await db.execute(
         update(AccessCode)
         .where(
@@ -209,7 +255,8 @@ async def revoke_member_device(
     db: AsyncSession, request: Request, user_id: int, device_id: int
 ) -> None:
     actor = await require_admin(db, request)
-    await devices.revoke_device(db, await _member(db, user_id), device_id, actor.id)
+    # Удаленное администратором устройство не тратит лимит смены устройств участника
+    await devices.revoke_device(db, await _member(db, user_id), device_id, actor.id, by_admin=True)
 
 
 async def download_history(

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { request, ApiError } from '../api/client';
 import { AccountLayout, DevicesPage, DownloadLogPage, DownloadsPage, InvitesPage, MembersPage } from './index';
 import { inviteStatus, personName, safeDownloadUrl, type DevicesInfo, type Download, type DownloadEvent, type Invite, type User } from './types';
+import { agents } from '../test/agents';
 
 vi.mock('../api/client', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/client')>();
@@ -24,11 +25,18 @@ function file(overrides: Partial<Download> = {}): Download {
 function view(content: React.ReactNode, initial = '/downloads') {
   return render(<MemoryRouter initialEntries={[initial]}>{content}</MemoryRouter>);
 }
+function asVisitor(userAgent: string, maxTouchPoints = 0) {
+  vi.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+  // jsdom не знает maxTouchPoints: свойство задается на каждый тест заново
+  Object.defineProperty(window.navigator, 'maxTouchPoints', { configurable: true, get: () => maxTouchPoints });
+}
 beforeEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.mocked(request).mockReset();
   app.user.role = 'admin';
   app.lang = 'en';
+  asVisitor(agents.windows);
 });
 
 describe('release links and invitation state', () => {
@@ -163,6 +171,7 @@ const devicesInfo: DevicesInfo = {
   devices: [{ id: 21, name: 'Work laptop', platform: 'windows', app_version: '0.2.0', ip_masked: '203.0.113.0/24', created_at: '2026-11-03T00:00:00Z', last_seen_at: '2026-11-12T09:00:00Z' }],
   session_limit: 3,
   device_limit: 2,
+  device_changes: { used: 1, limit: 3, days: 30 },
 };
 
 describe('member devices', () => {
@@ -248,5 +257,165 @@ describe('download log', () => {
     vi.mocked(request).mockResolvedValue({ items: [{ ...event, user: null }], total: 1 });
     view(<DownloadLogPage />, '/admin/downloads');
     expect(await screen.findByText('Deleted member')).toBeInTheDocument();
+  });
+});
+
+describe('downloads for the visitor system', () => {
+  const allAvailable = ['windows', 'macos', 'linux', 'android'].map((platform) => file({ platform: platform as Download['platform'], available: true, version: '0.2.0', url: `/api/downloads/${platform}/file` }));
+  const titles = () => screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
+  const cases: [string, string, number, string][] = [
+    ['Windows', agents.windows, 0, 'Windows'],
+    ['macOS', agents.macos, 0, 'macOS'],
+    ['Linux', agents.linux, 0, 'Linux'],
+    ['Android', agents.android, 5, 'Android'],
+  ];
+  for (const [name, agent, touch, first] of cases) {
+    it(`puts ${name} first with the primary button and keeps the rest secondary`, async () => {
+      asVisitor(agent, touch);
+      vi.mocked(request).mockResolvedValue({ items: allAvailable });
+      view(<DownloadsPage />);
+      await screen.findByRole('link', { name: `Download for ${first}` });
+      expect(titles()[0]).toBe(first);
+      const primary = screen.getAllByRole('link', { name: /^Download for/ }).filter((link) => link.classList.contains('primary'));
+      expect(primary.map((link) => link.textContent)).toEqual([`Download for ${first}`]);
+      const card = screen.getByRole('link', { name: `Download for ${first}` }).closest('article')!;
+      expect(card).toHaveClass('is-featured');
+      expect(within(card).getByText('Your system')).toBeInTheDocument();
+      expect(document.querySelectorAll('.ac-download-card.is-featured')).toHaveLength(1);
+    });
+  }
+  it('puts iOS first for an iPhone and an iPad in desktop mode', async () => {
+    for (const [agent, touch] of [[agents.iphone, 5], [agents.macos, 5]] as const) {
+      cleanup(); vi.restoreAllMocks(); asVisitor(agent, touch);
+      vi.mocked(request).mockResolvedValue({ items: [...allAvailable, file({ platform: 'ios', available: true, version: '0.2.0', url: 'https://apps.apple.com/app/id123' })] });
+      view(<DownloadsPage />);
+      const store = await screen.findByRole('link', { name: 'Open App Store' });
+      expect(store).toHaveClass('primary');
+      const ios = store.closest('.ac-ios')!;
+      expect(ios).toHaveClass('is-featured');
+      expect(ios.compareDocumentPosition(document.querySelector('.ac-download-grid')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getAllByRole('link', { name: /^Download for/ }).some((link) => link.classList.contains('primary'))).toBe(false);
+      expect(titles()[0]).toBe('Windows');
+    }
+  });
+  it('keeps the usual order with Windows featured for an unknown system', async () => {
+    asVisitor(agents.chromeos);
+    vi.mocked(request).mockResolvedValue({ items: allAvailable });
+    view(<DownloadsPage />);
+    await screen.findByRole('link', { name: 'Download for Windows' });
+    expect(titles()).toEqual(['Windows', 'macOS', 'Linux', 'Android']);
+    expect(screen.getByRole('link', { name: 'Download for Windows' })).toHaveClass('primary');
+    expect(screen.getByText('Desktop')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Download for Android' })).not.toHaveClass('primary');
+    expect(document.querySelector('.ac-ios')!.compareDocumentPosition(document.querySelector('.ac-download-grid')!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+  });
+  it('explains Android installation near the Android card in both languages', async () => {
+    vi.mocked(request).mockResolvedValue({ items: allAvailable });
+    view(<DownloadsPage />);
+    const hint = await screen.findByText('After downloading, open the file and allow installation from this source.');
+    expect(hint.closest('article')).toHaveAttribute('data-platform', 'android');
+    cleanup(); app.lang = 'ru';
+    view(<DownloadsPage />);
+    expect(await screen.findByText('После скачивания откройте файл и разрешите установку из этого источника.')).toBeInTheDocument();
+  });
+});
+
+describe('own password and sign-out everywhere', () => {
+  it('changes a member password without a 2FA code and reports the result', async () => {
+    app.user.role = 'member';
+    vi.mocked(request).mockImplementation(async (path: string) => (path === '/api/me/devices' ? devicesInfo : { status: 'ok' }));
+    view(<DevicesPage />, '/devices');
+    fireEvent.click(await screen.findByRole('button', { name: 'Change password' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByLabelText('Your current 2FA code')).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText('New password'), { target: { value: 'short' } });
+    fireEvent.change(within(dialog).getByLabelText('Current password'), { target: { value: 'old-password-123' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Change password' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('12–128');
+    fireEvent.change(within(dialog).getByLabelText('New password'), { target: { value: 'new-password-1234' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Change password' }));
+    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/me/password', { method: 'POST', body: { current_password: 'old-password-123', new_password: 'new-password-1234' } }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Password changed. Other sign-ins have ended.');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+  it('keeps the dialog with an error when the current password is wrong', async () => {
+    app.user.role = 'member';
+    vi.mocked(request).mockImplementation(async (path: string) => {
+      if (path === '/api/me/devices') return devicesInfo;
+      throw new ApiError(400, 'invalid_password');
+    });
+    view(<DevicesPage />, '/devices');
+    fireEvent.click(await screen.findByRole('button', { name: 'Change password' }));
+    fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'wrong-password-1' } });
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'new-password-1234' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Change password' }));
+    expect(await screen.findByText('The current password is incorrect.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Current password')).toHaveValue('');
+  });
+  it('asks an administrator for the 2FA code to sign out everywhere', async () => {
+    vi.mocked(request).mockImplementation(async (path: string) => (path === '/api/me/devices' ? devicesInfo : { status: 'ok' }));
+    view(<DevicesPage />, '/devices');
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out everywhere' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sign out everywhere' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('six-digit');
+    fireEvent.change(within(dialog).getByLabelText('Your current 2FA code'), { target: { value: '123456' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sign out everywhere' }));
+    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/me/sign-out-everywhere', { method: 'POST', body: { code: '123456' } }));
+    expect(await screen.findByRole('status')).toHaveTextContent('This browser stays signed in.');
+  });
+  it('shows how many new app devices were added in the window', async () => {
+    vi.mocked(request).mockResolvedValue(devicesInfo);
+    view(<DevicesPage />, '/devices');
+    expect(await screen.findByText('New devices in 30 days: 1 of 3')).toBeInTheDocument();
+    cleanup(); app.lang = 'ru';
+    vi.mocked(request).mockResolvedValue({ ...devicesInfo, device_changes: { used: 2, limit: 3, days: 21 } });
+    view(<DevicesPage />, '/devices');
+    expect(await screen.findByText('Новых устройств за 21 день: 2 из 3')).toBeInTheDocument();
+  });
+});
+
+describe('deleting members and invitations', () => {
+  it('shows password sign-in for members and 2FA only for administrators', async () => {
+    vi.mocked(request).mockResolvedValue({ items: [{ ...member, totp_enabled: false }, app.user, { ...app.user, id: 9, email: 'new-admin@example.com', display_name: 'New Admin', totp_enabled: false }], total: 3 });
+    view(<MembersPage />, '/admin/members');
+    await screen.findByText('Member One');
+    expect(screen.getByText('Password sign-in')).toBeInTheDocument();
+    expect(screen.getByText('2FA enabled')).toBeInTheDocument();
+    expect(screen.getByText('2FA not configured')).toBeInTheDocument();
+  });
+  it('deletes a member only with a 2FA code and never offers it on the own card', async () => {
+    let deleted = false;
+    vi.mocked(request).mockImplementation(async (path: string, options) => {
+      if (options?.method === 'POST') { deleted = true; return undefined; }
+      if (path.endsWith('/devices')) return devicesInfo;
+      return { items: deleted ? [app.user] : [member, app.user], total: deleted ? 1 : 2 };
+    });
+    view(<MembersPage />, '/admin/members');
+    fireEvent.click(await screen.findByRole('button', { name: 'Details: Admin' }));
+    expect(screen.queryByRole('button', { name: 'Delete member' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Details: Member One' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+    expect(screen.getByText(/This cannot be undone/)).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete member' }));
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('six-digit');
+    fireEvent.change(screen.getByLabelText('Your current 2FA code'), { target: { value: '123456' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete member' }));
+    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/admin/members/2/delete', { method: 'POST', body: { code: '123456' } }));
+    await waitFor(() => expect(screen.queryByText('Member One')).toBeNull());
+  });
+  it('deletes a used invitation and offers revoke only for an active one', async () => {
+    const used = { ...invite, id: 4, email: 'used@example.com', used_at: '2026-01-02T00:00:00Z' };
+    vi.mocked(request).mockImplementation(async (_path, options) => (options?.method === 'POST' ? undefined : { items: [invite, used], total: 2 }));
+    view(<InvitesPage />, '/admin/invites');
+    await screen.findByText('used@example.com');
+    expect(screen.queryByRole('button', { name: 'Revoke: used@example.com' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Revoke: new@example.com' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete: used@example.com' }));
+    expect(screen.getByRole('heading', { name: 'Delete invitation' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Your current 2FA code'), { target: { value: '654321' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(request).toHaveBeenCalledWith('/api/admin/invites/4/delete', { method: 'POST', body: { code: '654321' } }));
   });
 });

@@ -22,16 +22,17 @@
   const submit = (label, name = 'arrow') => `<button class="btn primary lg block auth-submit" type="submit">${label}${icon(name)}</button>`;
   const otp = () => `<div class="auth-field field"><span class="field-label" id="auth-otp-label">Код из приложения</span><div class="auth-otp login-otp" role="group" aria-labelledby="auth-otp-label">${Array.from({ length: 6 }, (_, index) => `${index === 3 ? '<span class="login-otp-sep" aria-hidden="true"></span>' : ''}<input class="login-otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Цифра ${index + 1} из 6" ${index === 0 ? 'autocomplete="one-time-code"' : 'autocomplete="off"'} data-auth-digit="${index}">`).join('')}</div><small class="field-hint">В макете используйте <b class="auth-mono">123456</b>. ${link('2fa', 'Подставить код', 'auth-fill-code')}</small></div>`;
 
+  // 2026-11-13: 2FA только у администратора. Участник входит одним шагом; роль для просмотра — переключателем
+  const demoRole = () => PG.state.demoLoginRole === 'admin' ? 'admin' : 'member';
   function login() {
     return `<form class="auth-form" data-auth-form="login">
-        ${steps('Пароль', 'Код 2FA', 0)}
-        ${heading('Личный кабинет', 'Вход в Private Gateway', 'Email и пароль, затем 6-значный код из приложения-аутентификатора.')}
+        ${heading('Личный кабинет', 'Вход в Private Gateway', 'Введите email и пароль. Администратор затем вводит 6-значный код из приложения-аутентификатора.')}
         ${error}
         ${field('auth-email', 'Email', '', { type: 'email' })}
         ${field('auth-password', 'Пароль', '', { type: 'password', minLength: false, aside: link('reset', 'Забыли пароль?') })}
-        <label class="auth-check check login-check"><input type="checkbox" id="auth-remember"><span class="check-text"><span>Запомнить это устройство на 30 дней</span><small class="field-hint">Код 2FA здесь не спросим 30 дней. Не отмечайте на чужом компьютере.</small></span></label>
         ${submit('Войти')}
         <div class="login-alt"><span class="muted">Нет аккаунта?</span>${link('invite', `Регистрация только по приглашению${icon('chevron')}`)}</div>
+        <div class="auth-demo-role"><span class="auth-mini-label">Роль в макете</span><div class="segmented-control" role="group" aria-label="Роль в макете"><button type="button" data-auth-demo-role="member" aria-pressed="${demoRole() === 'member'}">Участник</button><button type="button" data-auth-demo-role="admin" aria-pressed="${demoRole() === 'admin'}">Администратор</button></div><small class="field-hint">${demoRole() === 'admin' ? 'Администратор после пароля вводит код 2FA.' : 'Участник входит по email и паролю, без 2FA.'}</small></div>
       </form>`;
   }
 
@@ -44,7 +45,7 @@
   function invite() {
     const initialCode = PG.state.invitation?.code || 'PG-DEMO';
     const invitation = invitationFor(initialCode);
-    return `${steps('Аккаунт', 'Приложение 2FA', 0)}${heading('По приглашению', 'Добро пожаловать', 'Создайте демонстрационный аккаунт по приглашению.')}
+    return `${heading('По приглашению', 'Добро пожаловать', 'Создайте демонстрационный аккаунт по приглашению. Для приглашения администратора понадобится приложение-аутентификатор.')}
       <form class="auth-form" data-auth-form="invite">${error}
         ${field('auth-invite', 'Код приглашения', initialCode, { hint: 'Используйте созданное приглашение или демонстрационный код PG-DEMO.' })}
         ${field('auth-name', 'Ваше имя', 'Новый участник')}
@@ -58,12 +59,12 @@
   function twoFactor() {
     return `${steps('Пароль', 'Код 2FA', 1)}${heading('Второй шаг', 'Подтвердите вход', 'Введите шесть цифр из приложения-аутентификатора.')}
       <div class="auth-account login-acct">${icon('user')}<div><strong>Подтверждение входа</strong><span>${escape(PG.state.loginEmail || 'demo@example.test')}</span></div>${link('login', 'Не вы?')}</div>
-      <form class="auth-form" data-auth-form="2fa">${error}${otp()}${submit('Войти в кабинет', 'shield')}</form>
+      <form class="auth-form" data-auth-form="2fa">${error}${otp()}<label class="auth-check check login-check"><input type="checkbox" id="auth-remember"><span class="check-text"><span>Запомнить это устройство на 30 дней</span><small class="field-hint">Код 2FA здесь не спросим 30 дней. Не отмечайте на чужом компьютере.</small></span></label>${submit('Войти в кабинет', 'shield')}</form>
       <div class="auth-bottom-links">${link('login', `${icon('arrow')}Назад`, 'auth-back')}${link('reset', 'Не получается войти?')}</div>`;
   }
 
   function setup() {
-    return `${steps('Аккаунт', 'Приложение 2FA', 1)}${heading('Настройка входа', 'Добавьте второй шаг', 'Так будет выглядеть подключение приложения-аутентификатора.')}
+    return `${steps('Аккаунт', 'Приложение 2FA', 1)}${heading('Вход администратора', 'Добавьте второй шаг', 'Администратор подтверждает вход кодом. Так будет выглядеть подключение приложения-аутентификатора.')}
       <div class="auth-setup"><div class="auth-qr" aria-label="Заглушка QR-кода, не для сканирования">${icon('monitor')}<strong>QR · макет</strong><span>Не сканировать</span></div><div class="auth-setup-text"><strong>1. Добавьте аккаунт</strong><p>В рабочей версии здесь появится QR-код для приложения.</p><span class="auth-mini-label">Вымышленный ключ</span><code>PG-DEMO-NO-SECRET</code><button class="auth-link" type="button" data-auth-copy="key">${icon('copy')}Скопировать</button></div></div>
       <form class="auth-form" data-auth-form="setup">${error}<strong class="auth-section-title">2. Введите проверочный код</strong>${otp()}${submit('Продолжить', 'shield')}</form>
       <p class="auth-footnote">${icon('eye')}В этом макете двухфакторная защита не включается.</p>`;
@@ -94,10 +95,10 @@
     return `<svg class="auth-network-background" viewBox="0 0 700 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><g class="auth-network-lines"><path d="M430 80h98q20 0 20 20v66q0 20 20 20h132M610 0v86q0 20-20 20H430q-20 0-20 20v106q0 20-20 20h-94M700 336H582q-20 0-20-20v-44q0-20-20-20H410M700 508h-78q-20 0-20-20v-56q0-20-20-20H470q-20 0-20 20v76q0 20-20 20H302M700 668H520q-20 0-20-20v-60q0-20-20-20h-78M264 800v-86q0-20 20-20h146q20 0 20-20V528"/></g><g class="auth-network-junctions"><circle cx="430" cy="80" r="5"/><circle cx="548" cy="166" r="4"/><circle cx="410" cy="232" r="4"/><circle cx="296" cy="252" r="5"/><circle cx="562" cy="292" r="4"/><circle cx="582" cy="412" r="4"/><circle cx="470" cy="412" r="4"/><circle cx="302" cy="528" r="5"/><circle cx="450" cy="612" r="4"/><circle cx="520" cy="668" r="4"/><circle cx="284" cy="694" r="5"/></g></svg>`;
   }
   const authBrand = () => `<a class="login-brandrow" href="#home" aria-label="Private Gateway — главная"><svg class="brand-mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="var(--accent)"/><path d="M256 96 374 144v101c0 81-49 132-118 171-69-39-118-90-118-171V144Z" fill="none" stroke="var(--accent-fg)" stroke-width="25" stroke-linejoin="round"/><path d="m202 253 36 36 75-82" fill="none" stroke="var(--accent-fg)" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="login-brandrow-text"><div class="brand-name">Private Gateway</div><div class="brand-sub">приватный доступ к приложению</div></div></a>`;
-  const themeButton = () => `<button type="button" class="btn ghost sm icon-only auth-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}">${icon('appearance')}</button>`;
+  const themeButton = () => `<button type="button" class="btn ghost sm icon-only auth-theme" aria-label="${document.documentElement.dataset.theme === 'dark' ? 'Включить светлую тему' : 'Включить темную тему'}">${icon('appearance')}</button>`;
   PG.auth = function (route) {
     const render = { login, invite, '2fa': twoFactor, setup, backup, reset }[route] || login;
-    return `<div class="auth-shell login-page"><aside class="login-brand" aria-label="Личный кабинет Private Gateway">${networkBackground()}${authBrand()}<div class="login-hero"><div class="eyebrow">Личный кабинет</div><p class="login-hero-h">Приватная работа в сети с контролем трафика</p><p class="login-hero-p">Войдите по email и паролю, затем введите код из приложения-аутентификатора.</p><p class="login-hero-note">Регистрация — только по приглашению.</p></div><div class="login-brandfoot"><span>© 2026 Private Gateway</span><span>Приложение для компьютера и телефона</span></div></aside><div class="login-m-hero">${networkBackground()}<div class="login-m-top">${authBrand()}${themeButton()}</div><p class="login-m-lead">Вход по email и паролю, затем код из аутентификатора.</p><p class="login-m-invite">Регистрация — по приглашению.</p></div><section class="auth-content login-main"><div class="login-topline">${themeButton()}</div><div class="login-center"><div class="auth-panel login-form ${route === 'setup' ? 'wide' : ''}">${render()}</div></div></section><footer class="login-m-foot"><span>© 2026 Private Gateway</span></footer></div>`;
+    return `<div class="auth-shell login-page"><aside class="login-brand" aria-label="Личный кабинет Private Gateway">${networkBackground()}${authBrand()}<div class="login-hero"><div class="eyebrow">Личный кабинет</div><p class="login-hero-h">Приватная работа в сети с контролем трафика</p><p class="login-hero-p">Войдите по email и паролю. Администраторы дополнительно подтверждают вход кодом из приложения-аутентификатора.</p><p class="login-hero-note">Регистрация — только по приглашению.</p></div><div class="login-brandfoot"><span>© 2026 Private Gateway</span><span>Приложение для компьютера и телефона</span></div></aside><div class="login-m-hero">${networkBackground()}<div class="login-m-top">${authBrand()}${themeButton()}</div><p class="login-m-lead">Вход по email и паролю; администратору — еще код 2FA.</p><p class="login-m-invite">Регистрация — по приглашению.</p></div><section class="auth-content login-main"><div class="login-topline">${themeButton()}</div><div class="login-center"><div class="auth-panel login-form ${route === 'setup' ? 'wide' : ''}">${render()}</div></div></section><footer class="login-m-foot"><span>© 2026 Private Gateway</span></footer></div>`;
   };
 
   PG.bindAuth = function () {
@@ -127,8 +128,14 @@
       document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
       container.querySelectorAll('.auth-theme').forEach((item) => {
         item.innerHTML = icon('appearance');
-        item.setAttribute('aria-label', document.documentElement.dataset.theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
+        item.setAttribute('aria-label', document.documentElement.dataset.theme === 'dark' ? 'Включить светлую тему' : 'Включить темную тему');
       });
+    }));
+    container.querySelectorAll('[data-auth-demo-role]').forEach((button) => button.addEventListener('click', () => {
+      // Без перерисовки формы: введенные email и пароль остаются
+      PG.state.demoLoginRole = button.dataset.authDemoRole;
+      container.querySelectorAll('[data-auth-demo-role]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      container.querySelector('.auth-demo-role .field-hint').textContent = demoRole() === 'admin' ? 'Администратор после пароля вводит код 2FA.' : 'Участник входит по email и паролю, без 2FA.';
     }));
     container.querySelector('#auth-invite')?.addEventListener('input', (event) => {
       const invitation = invitationFor(event.currentTarget.value);
@@ -178,9 +185,11 @@
       event.preventDefault();
       const route = event.currentTarget.dataset.authForm;
       if (route === 'login') {
-        PG.state.role = 'member';
+        PG.state.role = demoRole();
         PG.state.loginEmail = document.getElementById('auth-email').value.trim();
-        navigate('2fa');
+        if (PG.state.role === 'admin') { navigate('2fa'); return; }
+        PG.toast('Демонстрационный вход выполнен');
+        navigate('downloads');
         return;
       }
       if (route === 'invite') {
@@ -188,7 +197,16 @@
         if (!invitation) { showError('Приглашение не найдено. Используйте созданный демо-код или PG-DEMO.'); return; }
         if (invitation.status === 'used') { showError('Это приглашение уже использовано в макете. Создайте новое или используйте PG-DEMO.'); return; }
         if (invitation.status !== 'active') { showError('Это приглашение отозвано или больше не действует в макете.'); return; }
-        PG.state.pendingRole = invitation.role === 'admin' ? 'admin' : 'member';
+        if (invitation.role !== 'admin') {
+          // Участник по приглашению сразу попадает в кабинет: шагов 2FA у него нет
+          if (invitation.id != null) invitation.status = 'used';
+          delete PG.state.invitation;
+          PG.state.role = 'member';
+          PG.toast('Демонстрационный аккаунт создан');
+          navigate('downloads');
+          return;
+        }
+        PG.state.pendingRole = 'admin';
         PG.state.pendingInviteId = invitation.id;
         navigate('setup');
         return;
@@ -220,7 +238,7 @@
       }
       if (route === 'reset') {
         if (document.getElementById('auth-reset').value.trim().toUpperCase() !== 'RESET-DEMO') { showError('Используйте демонстрационный код RESET-DEMO.'); return; }
-        PG.toast('Демо-пароль обновлён. Можно посмотреть вход.');
+        PG.toast('Демо-пароль обновлен. Можно посмотреть вход.');
         navigate('login');
       }
     });

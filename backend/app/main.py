@@ -1,5 +1,7 @@
 """HTTP API отдельного сайта. Никаких изменений VPN, сети или ОС при запуске."""
 
+import asyncio
+import contextlib
 import hmac
 import logging
 from contextlib import asynccontextmanager
@@ -16,13 +18,23 @@ from app.core.cookies import cookie_name
 from app.core.errors import AppError
 from app.core.security.crypto import CryptoError
 from app.db.session import get_engine
+from app.services import retention
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    get_settings()
-    yield
-    await get_engine().dispose()
+    # Ежедневная очистка ненужных данных идет в этом же процессе (services/retention.py)
+    purge = None
+    if get_settings().purge_time != "off":
+        purge = asyncio.create_task(retention.run_daily(), name="pgweb-purge")
+    try:
+        yield
+    finally:
+        if purge is not None:
+            purge.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await purge
+        await get_engine().dispose()
 
 
 class SecurityMiddleware:

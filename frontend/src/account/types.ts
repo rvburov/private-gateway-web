@@ -45,6 +45,8 @@ export interface DevicesInfo {
   devices: AppDeviceInfo[];
   session_limit: number;
   device_limit: number;
+  // Новые установки приложения за окно смены устройств (DECISIONS п. 11)
+  device_changes: { used: number; limit: number; days: number };
 }
 export interface DownloadEvent {
   id: number;

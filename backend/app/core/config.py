@@ -29,6 +29,18 @@ class Settings(BaseSettings):
     device_limit: int = Field(default=3, ge=1, le=50)
     # Токен устройства приложения продлевается при каждой проверке; без проверок гаснет
     app_token_days: int = Field(default=30, ge=1, le=90)
+    # Смена устройств: не больше device_changes новых установок приложения за
+    # device_change_days. Повторный вход той же установки и удаленные администратором не в счет
+    device_changes: int = Field(default=3, ge=1, le=50)
+    device_change_days: int = Field(default=30, ge=1, le=365)
+    # Очистка ненужных данных: закончившиеся входы, доверенные браузеры, использованные,
+    # отозванные и истекшие приглашения и коды сброса — через purge_after_days после конца
+    purge_after_days: int = Field(default=30, ge=1, le=365)
+    audit_days: int = Field(default=180, ge=30, le=3650)
+    download_log_days: int = Field(default=365, ge=30, le=3650)
+    # Время ежедневной очистки в API (UTC, после бэкапа 01:45 и проверки 02:45); off — только
+    # командой python -m app.cli purge
+    purge_time: str = Field(default="03:30", pattern=r"^(?:(?:[01][0-9]|2[0-3]):[0-5][0-9]|off)$")
     download_root: Path = Path("downloads")
     # Хеш коммита, из которого собран образ API: по нему deploy.sh видит, что отвечает новая версия
     version: str = Field(default="dev", pattern=r"^[0-9A-Za-z._-]{1,40}$")

@@ -17,6 +17,28 @@ from app.db.models import DownloadEvent, Release, User
 from app.services.auth import client_ip, current_user
 
 PLATFORMS = ("windows", "macos", "ios", "linux", "android")
+# Тип файла по расширению: Android открывает установщик по типу .apk, иначе файл «не открыть»
+MEDIA_TYPES = {
+    ".apk": "application/vnd.android.package-archive",
+    ".msi": "application/x-msi",
+    ".exe": "application/vnd.microsoft.portable-executable",
+    ".dmg": "application/x-apple-diskimage",
+    ".deb": "application/vnd.debian.binary-package",
+    ".rpm": "application/x-rpm",
+}
+
+
+def media_type(filename: str) -> str:
+    return MEDIA_TYPES.get(Path(filename).suffix.lower(), "application/octet-stream")
+
+
+def content_disposition(filename: str) -> str:
+    """attachment с именем файла: ASCII-запасное filename и точное filename* (RFC 6266).
+
+    Старые загрузчики Android понимают только filename; расширение в нем сохраняется.
+    """
+    fallback = re.sub(r"[^A-Za-z0-9._+-]", "_", filename).lstrip(".") or "download"
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
 
 
 def app_store_url(value: str) -> bool:
@@ -126,14 +148,14 @@ async def download(db: AsyncSession, request: Request, platform: str) -> Streami
         finally:
             file.close()
 
+    # Cache-Control: no-store и nosniff добавляет SecurityMiddleware ко всем ответам API.
+    # Content-Length — точный размер: телефон показывает ход загрузки и проверяет конец файла
     return StreamingResponse(
         chunks(),
-        media_type="application/octet-stream",
+        media_type=media_type(filename),
         headers={
-            "Content-Disposition": "attachment; filename*=UTF-8''" + quote(filename, safe=""),
+            "Content-Disposition": content_disposition(filename),
             "Content-Length": str(size),
-            "X-Content-Type-Options": "nosniff",
-            "Cache-Control": "no-store",
             "X-Checksum-SHA256": sha256 or "",
         },
     )

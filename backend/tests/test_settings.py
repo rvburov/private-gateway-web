@@ -58,3 +58,21 @@ def test_version_is_a_short_safe_token():
     for bad in ["", "x" * 41, "1.0 <script>", "a/b"]:
         with pytest.raises(ValidationError):
             settings(version=bad)
+
+
+def test_purge_time_and_new_limits_are_validated():
+    assert settings().purge_time == "03:30"
+    assert settings(purge_time="off").purge_time == "off"
+    for bad in ("24:00", "3:30", "03:60", "never"):
+        with pytest.raises(ValidationError):
+            settings(purge_time=bad)
+    defaults = settings()
+    assert (defaults.device_changes, defaults.device_change_days) == (3, 30)
+    assert (defaults.purge_after_days, defaults.audit_days, defaults.download_log_days) == (
+        30,
+        180,
+        365,
+    )
+    for bad in ({"device_changes": 0}, {"device_change_days": 0}, {"purge_after_days": 0}):
+        with pytest.raises(ValidationError):
+            settings(**bad)

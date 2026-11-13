@@ -1,9 +1,13 @@
 """Устройства участника: входы на сайт (сеансы) и приложения Private Gateway (токены устройств).
 
-Сайт — источник решения о доступе для приложения: клиент входит аккаунтом сайта (пароль и 2FA),
-получает токен устройства и регулярно проверяет его здесь. Отзыв устройства, блокировка участника
-или смена пароля (auth_version) гасят токен при следующей проверке. VPN-сервер здесь не
-затрагивается: подписки и профили подключения по-прежнему выдает Private Gateway.
+Сайт — источник решения о доступе для приложения: клиент входит аккаунтом сайта (участник —
+паролем, администратор — паролем и кодом 2FA), получает токен устройства и регулярно проверяет
+его здесь. Отзыв устройства, блокировка участника или смена пароля (auth_version) гасят токен при
+следующей проверке. VPN-сервер здесь не затрагивается: подписки и профили подключения
+по-прежнему выдает Private Gateway.
+
+Лимиты: одновременно не больше device_limit устройств и не больше device_changes новых установок
+за device_change_days (DECISIONS п. 11). Повторный вход той же установки (uid) новым не считается.
 """
 
 import re
@@ -27,6 +31,29 @@ BEARER = re.compile(r"Bearer ([A-Za-z0-9_-]{32,128})")
 
 def device_limit_for(user: User) -> int:
     return user.device_limit or get_settings().device_limit
+
+
+def change_limit_for(user: User) -> int:
+    # Личный лимит выше общего не должен упираться в смену устройств при первой настройке
+    return max(get_settings().device_changes, device_limit_for(user))
+
+
+async def changes_used(db: AsyncSession, user: User, now: datetime) -> int:
+    """Новые установки за окно смены устройств, кроме удаленных администратором."""
+    since = now - timedelta(days=get_settings().device_change_days)
+    return (
+        await db.scalar(
+            select(func.count())
+            .select_from(AppDevice)
+            .where(
+                AppDevice.user_id == user.id,
+                AppDevice.new_device.is_(True),
+                AppDevice.removed_by_admin.is_(False),
+                AppDevice.created_at > since,
+            )
+        )
+        or 0
+    )
 
 
 def session_active(now: datetime):
@@ -98,6 +125,11 @@ async def overview(db: AsyncSession, user: User, request: Request | None = None)
         "devices": [_device_out(row) for row in apps],
         "session_limit": get_settings().session_limit,
         "device_limit": device_limit_for(user),
+        "device_changes": {
+            "used": await changes_used(db, user, now),
+            "limit": change_limit_for(user),
+            "days": get_settings().device_change_days,
+        },
     }
 
 
@@ -121,7 +153,9 @@ async def revoke_session(db: AsyncSession, user: User, session_id: int, actor_id
     await db.commit()
 
 
-async def revoke_device(db: AsyncSession, user: User, device_id: int, actor_id: int) -> None:
+async def revoke_device(
+    db: AsyncSession, user: User, device_id: int, actor_id: int, *, by_admin: bool = False
+) -> None:
     await _lock_user(db, user.id)
     row = await db.scalar(
         select(AppDevice)
@@ -131,6 +165,7 @@ async def revoke_device(db: AsyncSession, user: User, device_id: int, actor_id: 
     if not row or row.revoked_at is not None:
         raise AppError(404, "not_found")
     row.revoked_at = utcnow()
+    row.removed_by_admin = by_admin
     auth.audit(db, "app_device.revoked", actor_id, user.id)
     await db.commit()
 
@@ -153,18 +188,34 @@ async def app_login(db: AsyncSession, request: Request, body) -> dict:
     user = await db.scalar(select(User).where(User.id == row.id).with_for_update())
     if not user or user.status != "active" or user.password_hash != stored_hash:
         raise AppError(401, "invalid_credentials")
-    # Пароль верный: дальнейшие отказы (нет 2FA, лимит устройств) не должны копить попытки,
-    # общие с входом на сайт, — там участник освобождает место
+    # Пароль верный: дальнейшие отказы (нет кода, нет 2FA, лимиты устройств) не должны копить
+    # попытки, общие с входом на сайт, — там участник освобождает место
     await limits.clear("login-user", identity + ":" + ip)
     await limits.clear("login-ip", ip)
-    # Вход в приложение — только для аккаунта с настроенной 2FA (настраивается на сайте)
-    if not user.totp_enabled:
-        raise AppError(403, "setup_required")
-    await limits.attempt("factor-user", str(user.id))
-    await auth.consume_factor(db, user, body.code, body.recovery_code)
-    await limits.clear("factor-user", str(user.id))
+    if auth.needs_two_factor(user):
+        # Администратор: 2FA настраивается на сайте, код обязателен. Код участника не читается:
+        # клиенты 0.2.0 присылают шесть цифр всегда
+        if not user.totp_enabled:
+            raise AppError(403, "setup_required")
+        if body.code is None and body.recovery_code is None:
+            raise AppError(401, "code_required")
+        await limits.attempt("factor-user", str(user.id))
+        await auth.consume_factor(db, user, body.code, body.recovery_code)
+        await limits.clear("factor-user", str(user.id))
     now = utcnow()
     device = body.device
+    # Установка, уже входившая в этот аккаунт, — повторный вход, а не новое устройство
+    known = await db.scalar(
+        select(AppDevice.id)
+        .where(AppDevice.user_id == user.id, AppDevice.device_uid == device.uid)
+        .limit(1)
+    )
+    if known is None and await changes_used(db, user, now) >= change_limit_for(user):
+        # Сначала смена: освобождение места здесь не поможет, текст 409 должен это сказать.
+        # Код 2FA администратора уже израсходован — фиксируем, иначе он сработал бы повторно
+        auth.audit(db, "app.device_change_limit", user.id, user.id)
+        await db.commit()
+        raise AppError(409, "device_change_limit")
     # Повторный вход с того же устройства заменяет его токен, поэтому место он не занимает
     others = await db.scalar(
         select(func.count())
@@ -172,7 +223,7 @@ async def app_login(db: AsyncSession, request: Request, body) -> dict:
         .where(*_device_active(user, now), AppDevice.device_uid != device.uid)
     )
     if others >= device_limit_for(user):
-        # Код 2FA уже израсходован: фиксируем это, иначе тот же код сработал бы повторно
+        # Как и выше: израсходованный код 2FA администратора фиксируется вместе с отказом
         auth.audit(db, "app.device_limit", user.id, user.id)
         await db.commit()
         raise AppError(409, "device_limit")
@@ -201,6 +252,7 @@ async def app_login(db: AsyncSession, request: Request, body) -> dict:
         ip_masked=mask_ip(ip),
         last_seen_at=now,
         expires_at=now + timedelta(days=get_settings().app_token_days),
+        new_device=known is None,
     )
     db.add(record)
     auth.audit(db, "app.login", user.id, user.id)
@@ -234,7 +286,7 @@ async def _app_device(
             AppDevice.expires_at > now,
             AppDevice.auth_version == User.auth_version,
             User.status == "active",
-            User.totp_enabled.is_(True),
+            auth.two_factor_satisfied(),
         )
     )
     pair = (await db.execute(query.with_for_update(of=AppDevice) if lock else query)).one_or_none()

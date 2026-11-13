@@ -20,7 +20,8 @@ export function RequireSession({ children, admin = false }: { children: ReactNod
   if (loading) return <div className="page-status" role="status">{text.loading}</div>;
   if (sessionError) return <div className="page-status"><p role="alert">{errorText(sessionError, lang)}</p><button className="btn" onClick={() => void reloadUser()}>{text.retry}</button></div>;
   if (!user || user.status !== 'active') return <Navigate to="/login" replace />;
-  if (admin && user.role !== 'admin') return <Navigate to="/downloads" replace />;
+  // Администрирование — только с настроенной 2FA; сервер проверяет то же на каждом /admin/*
+  if (admin && (user.role !== 'admin' || !user.totp_enabled)) return <Navigate to="/downloads" replace />;
   return children;
 }
 

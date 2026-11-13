@@ -233,16 +233,15 @@ function AuthFlow({ entry }: { entry: 'login' | 'register' | 'reset' }) {
   const emailField = (label: string = text.email) => <Field id="auth-email" label={label} type="email" value={email} autoComplete="username" inputMode="email" spellCheck={false} autoCapitalize="none" required maxLength={254} onChange={event => setEmail(event.target.value)} />;
 
   let content: ReactNode;
+  // Участник входит одним шагом; код 2FA и «запомнить устройство» — только на шаге администратора
   if (step === 'login') content = <form className="auth-form" onSubmit={passwordSubmit} noValidate aria-labelledby="auth-title">
-    <Steps first={text.passwordStep} second={text.codeStep} active={0} />
     <Heading eyebrow={text.account} title={text.loginTitle} description={text.loginDescription} />{error}
     {emailField()}
     <Field id="auth-password" label={text.password} type="password" value={password} autoComplete="current-password" required maxLength={128} onChange={event => setPassword(event.target.value)} aside={<Link className="auth-link login-link" to="/reset">{text.forgot}</Link>} />
-    <label className="auth-check check login-check"><input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} /><span className="check-text"><span>{text.remember}</span><small className="field-hint">{text.rememberHint}</small></span></label>
     {submitButton(text.signIn)}<div className="login-alt"><span className="muted">{text.noAccount}</span><Link className="auth-link login-link" to="/register">{text.invitationLink}<Icon name="chevron" /></Link></div>
   </form>;
   else if (step === 'register') content = <form className="auth-form" onSubmit={registerSubmit} noValidate aria-labelledby="auth-title">
-    <Steps first={text.accountStep} second={text.setupStep} active={0} /><Heading eyebrow={text.invitation} title={text.welcome} description={text.registerDescription} />{error}
+    <Heading eyebrow={text.invitation} title={text.welcome} description={text.registerDescription} />{error}
     <Field id="auth-invite" label={text.invitationCode} hint={text.invitationHint} value={invite} onChange={event => setInvite(event.target.value)} autoComplete="off" spellCheck={false} required maxLength={256} />
     <Field id="auth-name" label={text.name} value={name} onChange={event => setName(event.target.value)} autoComplete="name" required maxLength={100} />
     {emailField(text.invitedEmail)}
@@ -253,6 +252,7 @@ function AuthFlow({ entry }: { entry: 'login' | 'register' | 'reset' }) {
     <Steps first={text.passwordStep} second={text.codeStep} active={1} /><Heading eyebrow={text.secondStep} title={step === 'recovery' ? text.recoveryTitle : text.confirmTitle} description={step === 'recovery' ? text.recoveryDescription : text.confirmDescription} />
     {accountRow}{error}
     {step === 'two-factor' ? otp : <Field id="auth-recovery" label={text.recoveryCode} hint={text.recoveryHint} value={recovery} onChange={event => setRecovery(event.target.value)} autoComplete="off" spellCheck={false} autoCapitalize="none" required maxLength={128} />}
+    <label className="auth-check check login-check"><input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} /><span className="check-text"><span>{text.remember}</span><small className="field-hint">{text.rememberHint}</small></span></label>
     {submitButton(text.enterAccount, 'shield')}
     <div className="auth-bottom-links"><button className="auth-link login-link auth-back" type="button" onClick={restart} disabled={busy}><Icon name="arrow" />{text.back}</button><button className="auth-link login-link" type="button" disabled={busy} onClick={() => { setStep(step === 'recovery' ? 'two-factor' : 'recovery'); setDigits(EMPTY_OTP); setRecovery(''); setFailure(null); }}>{step === 'recovery' ? text.useAuthenticator : text.useRecovery}</button></div>
     {step === 'recovery' && <p className="auth-footnote">{text.noCodes}</p>}
@@ -261,7 +261,7 @@ function AuthFlow({ entry }: { entry: 'login' | 'register' | 'reset' }) {
     <Steps first={entry === 'register' ? text.accountStep : text.passwordStep} second={text.setupStep} active={1} /><Heading eyebrow={text.setupEyebrow} title={text.setupTitle} description={text.setupDescription} />{error}
     {!setup ? <div role="status" className="auth-setup-loading">{busy ? text.loading : <button type="button" className="btn" onClick={() => void run(async id => { const result = await request<SetupResponse>('/api/auth/2fa/setup', { method: 'POST', body: {} }); if (isCurrent(id)) setSetup(result); })}>{text.retry}</button>}</div> : <div className="auth-setup"><div className="auth-qr"><img src={svgDataUri(setup.qr_svg)} alt={text.qrAlt} width={148} height={148} /></div><div className="auth-setup-text"><strong>{text.addAccount}</strong><p>{text.scanDescription}</p><span className="auth-mini-label">{text.manualKey}</span><code>{groupSecret(setup.secret)}</code><button type="button" className="auth-link login-link" onClick={() => void copy(setup.secret)}><Icon name="copy" />{text.copy}</button></div></div>}
     {copyState && <p role="status" className="auth-footnote">{text[copyState]}</p>}<strong className="auth-section-title">{text.enterSetupCode}</strong>{otp}
-    {submitButton(text.continue, 'shield', !setup)}{remember && <p className="auth-footnote">{text.setupRemember}</p>}
+    {submitButton(text.continue, 'shield', !setup)}
     <button className="auth-link login-link" type="button" disabled={busy} onClick={restart}>{text.backLogin}</button>
   </form>;
   else if (step === 'backup' && enrollment) content = <form className="auth-form" onSubmit={event => { event.preventDefault(); if (!saved) { setFailure({ local: 'savedRequired' }); return; } finish(enrollment.user); }} aria-labelledby="auth-title">

@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.core.cookies import cookie_name, set_cookie
 from app.core.security.tokens import new_token
 from app.db.session import get_db
-from app.services import admin, auth, devices, downloads
+from app.services import account, admin, auth, devices, downloads
 
 router = APIRouter(prefix="/api")
 Db = Annotated[AsyncSession, Depends(get_db)]
@@ -59,6 +59,20 @@ async def revoke_my_device(device_id: int, request: Request, db: Db) -> Response
     user = await auth.current_user(db, request)
     await devices.revoke_device(db, user, device_id, user.id)
     return Response(status_code=204)
+
+
+@router.post("/me/password", response_model=schemas.StatusOut)
+async def change_password(
+    body: schemas.PasswordChangeIn, request: Request, response: Response, db: Db
+) -> dict:
+    return await account.change_password(db, request, response, body)
+
+
+@router.post("/me/sign-out-everywhere", response_model=schemas.StatusOut)
+async def sign_out_everywhere(
+    body: schemas.AdminCodeIn, request: Request, response: Response, db: Db
+) -> dict:
+    return await account.sign_out_everywhere(db, request, response, body)
 
 
 @router.post("/auth/login", response_model=schemas.LoginOut)
@@ -116,6 +130,12 @@ async def update_member(user_id: int, body: schemas.MemberIn, request: Request, 
     return await admin.update_member(db, request, user_id, body)
 
 
+@router.post("/admin/members/{user_id}/delete", status_code=204)
+async def delete_member(user_id: int, body: schemas.ConfirmIn, request: Request, db: Db):
+    await admin.delete_member(db, request, user_id, body.code)
+    return Response(status_code=204)
+
+
 @router.post("/admin/members/{user_id}/reset-code", response_model=schemas.ResetCodeOut)
 async def reset_code(user_id: int, body: schemas.ConfirmIn, request: Request, db: Db) -> dict:
     return await admin.reset_code(db, request, user_id, body.code)
@@ -167,6 +187,12 @@ async def create_invite(body: schemas.InviteIn, request: Request, db: Db) -> dic
 @router.post("/admin/invites/{invite_id}/revoke", response_model=schemas.InviteOut)
 async def revoke_invite(invite_id: int, body: schemas.ConfirmIn, request: Request, db: Db):
     return await admin.revoke_invite(db, request, invite_id, body.code)
+
+
+@router.post("/admin/invites/{invite_id}/delete", status_code=204)
+async def delete_invite(invite_id: int, body: schemas.ConfirmIn, request: Request, db: Db):
+    await admin.delete_invite(db, request, invite_id, body.code)
+    return Response(status_code=204)
 
 
 @router.get("/downloads", response_model=schemas.DownloadsOut)

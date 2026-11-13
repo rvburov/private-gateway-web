@@ -22,10 +22,28 @@ describe('real authentication flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' })); await screen.findByText('Email or password is incorrect.');
     expect(screen.getByLabelText('Password')).toHaveValue(''); expect(mocked.setUser).not.toHaveBeenCalled();
   });
-  it('completes password and OTP with the remembered-device choice', async () => {
+  it('signs a member in with email and password only', async () => {
+    mocked.request.mockResolvedValueOnce({ status: 'ok', user: { ...user, totp_enabled: false } });
+    show();
+    // На шаге пароля нет ни шагов 2FA, ни «запомнить устройство»: это только для администратора
+    expect(screen.queryByRole('checkbox', { name: /Remember this device/ })).toBeNull();
+    expect(screen.queryByText('2FA code')).toBeNull();
+    enterPassword(); fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByRole('heading', { name: 'Downloads page' });
+    expect(mocked.request).toHaveBeenCalledTimes(1);
+    expect(mocked.setUser).toHaveBeenCalledWith({ ...user, totp_enabled: false });
+  });
+  it('registers a member by invitation straight into the account', async () => {
+    mocked.request.mockResolvedValueOnce({ status: 'ok', user: { ...user, totp_enabled: false } });
+    show('/register'); fireEvent.change(screen.getByLabelText('Invitation code'), { target: { value: 'invitation-test' } }); fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Member' } }); fireEvent.change(screen.getByLabelText('Email from your invitation'), { target: { value: user.email } }); fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'test-password-123' } }); fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await screen.findByRole('heading', { name: 'Downloads page' });
+    expect(mocked.request).toHaveBeenCalledTimes(1);
+    expect(mocked.request).toHaveBeenCalledWith('/api/auth/register', { method: 'POST', body: { invite_code: 'invitation-test', email: user.email, display_name: 'Member', password: 'test-password-123' } });
+  });
+  it('completes an administrator password and OTP with the remembered-device choice', async () => {
     mocked.request.mockResolvedValueOnce({ status: 'totp_required', user: null }).mockResolvedValueOnce({ status: 'ok', user });
-    show(); enterPassword(); fireEvent.click(screen.getByRole('checkbox', { name: /Remember this device/ })); fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    await screen.findByRole('heading', { name: 'Confirm your sign-in' }); enterOtp(); fireEvent.click(screen.getByRole('button', { name: 'Open account' }));
+    show(); enterPassword(); fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByRole('heading', { name: 'Confirm your sign-in' }); enterOtp(); fireEvent.click(screen.getByRole('checkbox', { name: /Remember this device/ })); fireEvent.click(screen.getByRole('button', { name: 'Open account' }));
     await screen.findByRole('heading', { name: 'Downloads page' });
     expect(mocked.request).toHaveBeenNthCalledWith(1, '/api/auth/login', { method: 'POST', body: { email: user.email, password: 'test-password-123' } });
     expect(mocked.request).toHaveBeenNthCalledWith(2, '/api/auth/2fa', { method: 'POST', body: { code: '345678', remember_device: true } }); expect(mocked.setUser).toHaveBeenCalledWith(user);
