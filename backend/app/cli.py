@@ -3,23 +3,19 @@
 import argparse
 import asyncio
 import getpass
-import hashlib
-import os
 import re
 import sys
-import tempfile
 from pathlib import Path
 
 from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.schemas import RegisterIn
-from app.core.config import get_settings
 from app.core.security.passwords import hash_password_async, validate_password_policy
 from app.db.models import AuditEvent, Release, User
 from app.db.session import get_engine, get_session_factory
-from app.services import retention
-from app.services.downloads import PLATFORMS, app_store_url
+from app.services import retention, updates
+from app.services.downloads import PLATFORMS, app_store_url, store
 
 
 def parser() -> argparse.ArgumentParser:
@@ -35,6 +31,16 @@ def parser() -> argparse.ArgumentParser:
     release.add_argument("--platform", choices=[p for p in PLATFORMS if p != "ios"], required=True)
     release.add_argument("--version", required=True)
     release.add_argument("--file", type=Path, required=True)
+    stored = commands.add_parser(
+        "store-file", help="Положить проверенный файл в хранилище по SHA-256, без каталога"
+    )
+    stored.add_argument("--file", type=Path, required=True)
+    feed = commands.add_parser(
+        "publish-update", help="Внести подписанный манифест обновления (update.json)"
+    )
+    feed.add_argument("--version", required=True)
+    feed.add_argument("--manifest", type=Path, required=True)
+    feed.add_argument("--signature", type=Path, required=True)
     store = commands.add_parser("set-ios", help="Внести существующую ссылку App Store")
     store.add_argument("--url", required=True)
     store.add_argument("--version", required=True)
@@ -52,8 +58,23 @@ def version(value: str) -> str:
     return value
 
 
+def regular_file(path: Path) -> Path:
+    source = path.resolve(strict=True)
+    if not source.is_file() or not source.stat().st_size:
+        raise ValueError(f"{path.name} must be a nonempty regular file")
+    return source
+
+
+def read_small(path: Path, limit: int) -> bytes:
+    """Небольшой файл целиком; длиннее предела — отказ, а не обрезка."""
+    with regular_file(path).open("rb") as content:
+        data = content.read(limit + 1)
+    if len(data) > limit:
+        raise ValueError(f"{path.name} is larger than {limit} bytes")
+    return data
+
+
 async def run(args: argparse.Namespace) -> None:
-    settings = get_settings()
     async with get_session_factory()() as db:
         if args.command == "bootstrap-admin":
             password = (
@@ -90,25 +111,7 @@ async def run(args: argparse.Namespace) -> None:
             filename = source.name
             if len(filename) > 200 or any(ord(c) < 32 for c in filename):
                 raise ValueError("Invalid release filename")
-            root = settings.download_root.resolve()
-            root.mkdir(parents=True, exist_ok=True)
-            digest = hashlib.sha256()
-            size = 0
-            fd, temporary = tempfile.mkstemp(prefix=".release-", dir=root)
-            try:
-                with os.fdopen(fd, "wb") as output, source.open("rb") as content:
-                    while block := content.read(1024 * 1024):
-                        digest.update(block)
-                        output.write(block)
-                        size += len(block)
-                    output.flush()
-                    os.fsync(output.fileno())
-                storage_name = digest.hexdigest() + ".bin"
-                os.chmod(temporary, 0o640)
-                os.replace(temporary, root / storage_name)
-            finally:
-                if os.path.exists(temporary):
-                    os.unlink(temporary)
+            storage_name, size, sha256 = store(source)
             release = await db.get(Release, args.platform)
             if release is None:
                 release = Release(platform=args.platform, version=release_version)
@@ -117,12 +120,24 @@ async def run(args: argparse.Namespace) -> None:
             release.filename = filename
             release.storage_name = storage_name
             release.size_bytes = size
-            release.sha256 = digest.hexdigest()
+            release.sha256 = sha256
             release.enabled = True
             await db.commit()
             print(
                 f"Release catalog updated: {args.platform}, {release_version}, {size} bytes, "
-                f"SHA256 {digest.hexdigest()}"
+                f"SHA256 {sha256}"
+            )
+        elif args.command == "store-file":
+            # Файл ленты обновлений (rpm и другие): только хранилище, каталог не меняется
+            _, size, sha256 = store(regular_file(args.file))
+            print(f"Stored {args.file.name}: {size} bytes, SHA256 {sha256}")
+        elif args.command == "publish-update":
+            manifest = read_small(args.manifest, updates.MANIFEST_MAX_BYTES)
+            signature = read_small(args.signature, updates.SIGNATURE_MAX_BYTES + 64)
+            result = await updates.publish(db, version(args.version), manifest, signature)
+            print(
+                f"Update feed: {result['version']}, rollout {result['rollout']} %, "
+                f"files {', '.join(result['files'])}"
             )
         elif args.command == "set-ios":
             if not app_store_url(args.url):

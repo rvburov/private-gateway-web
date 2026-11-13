@@ -8,7 +8,8 @@
 
 Слои: `api` — разбор запроса и ответ, `services` — сценарии (`auth` — вход и 2FA администратора,
 `account` — свой пароль и выход на всех устройствах, `admin` — участники и приглашения,
-`devices` — входы и приложение, `downloads` — выпуски, `retention` — очистка), `db` — модели.
+`devices` — входы и приложение, `downloads` — выпуски, `updates` — лента обновлений программы
+и билеты на файлы, `retention` — очистка), `db` — модели.
 
 ## Запуск
 
@@ -54,9 +55,22 @@ python3 -m venv .venv
 доступа новые запросы недоступны. Уже переданные пользователю байты отозвать невозможно.
 Файл отдается с типом по расширению (`.apk` — `application/vnd.android.package-archive`, его
 открывает установщик Android), точным `Content-Length` и именем в `Content-Disposition`
-(`filename` ASCII и `filename*` UTF-8). Caddy не сжимает `/api/downloads/*`.
+(`filename` ASCII и `filename*` UTF-8). Caddy не сжимает `/api/downloads/*` и
+`/api/app/updates/files/*`.
 Для iOS команда `set-ios --version ... --url ...` принимает только HTTPS apps.apple.com
 с идентификатором приложения; URL указывается после реальной публикации.
+
+Лента обновлений программы (`/api/app/updates`, контракт — в api-contract.md):
+
+```bash
+.venv/bin/python -m app.cli store-file --file /path/to/private-gateway-1.2.3-1.x86_64.rpm
+.venv/bin/python -m app.cli publish-update --version 1.2.3 --manifest /path/to/update.json --signature /path/to/update.json.sig
+```
+
+`store-file` кладет файл в то же хранилище по SHA-256 без строки каталога. `publish-update`
+сохраняет манифест байт в байт и подпись, если версия совпадает, канал `stable` и файлы ленты
+из манифеста (msi, deb, rpm, dmg, apk) уже в хранилище; та же версия повторно заменяет строку
+(новая доля раскатки). Подпись сайт не проверяет: это делает программа встроенным ключом.
 
 ## Проверки
 

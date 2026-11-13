@@ -140,6 +140,42 @@ CSRF к ним не применяется; доступ — только по �
 
 Токен хранится на сервере только хешем. Решение о доступе принимает сайт, а не приложение.
 
+## Обновления программы
+
+Выпуск клиента присылает workflow «Выпуск на сайт» (`deploy/import-release.sh`,
+[deploy/README.md](../deploy/README.md), раздел 5). Сайт хранит манифест `update.json` байт в байт
+и его подпись `update.json.sig`. Подпись (ECDSA P-256 над точными байтами манифеста) и SHA-256
+файлов проверяет сама программа встроенным ключом: подделать обновление сайт не может, может
+только не показать его.
+
+- `GET /api/app/updates?platform=windows|macos|linux|android&channel=stable|beta`, заголовок
+  `Authorization: Bearer <токен устройства>` (проверка как у `/api/app/status`, но токен не
+  продлевается) -> `{releases: Release[]}`. `channel` по умолчанию `stable`. 401 `unauthorized` —
+  токена нет или доступ устройства закончился; 422 `validation_error` — неверные `platform` или
+  `channel` (ленты для iOS нет).
+- `Release = {version, channel:'stable'|'beta', manifest:string, signature:string,
+  files:{[kind]: {url:string, expires_at:ISO8601}}}`. `manifest` — base64 точных байт
+  `update.json`, `signature` — текст `update.json.sig` без пробелов по краям. Не больше 5
+  выпусков, новые версии сверху (порядок SemVer: `1.10.0` выше `1.9.0`): программа выбирает
+  обновление и версию для отката. Канал `stable` — только стабильные выпуски, `beta` — и бета
+  (сайт пока принимает только стабильные).
+- `files` — только виды своей платформы, которые есть в манифесте и лежат на сайте: windows —
+  `win-x64-msi`; linux — `linux-x64-deb`, `linux-x64-rpm`; macos — `osx-arm64-dmg`; android —
+  `android-apk`. Выпуск без файлов своей платформы остается в списке с пустым `files`. `url` —
+  абсолютная ссылка `https://<домен>/api/app/updates/files/<билет>`, действует 30 минут
+  (`expires_at`): перед загрузкой программа берет ленту заново.
+- `GET /api/app/updates/files/{билет}` — без `Authorization`: билет сам дает право (служба
+  десктопа токена не знает, ленту ей передает окно). Билет —
+  `base64url(device_id|version|kind|sha256|exp).base64url(HMAC-SHA256)` секретом сайта
+  `PGWEB_SECRET_KEY`; в базе не хранится и в пределах срока работает повторно. Ответ — файл как у
+  `/api/downloads/{platform}/file`: тип по расширению (`.apk` —
+  `application/vnd.android.package-archive`), `Content-Disposition` с именем файла из манифеста,
+  точный `Content-Length`, `X-Checksum-SHA256`, `Cache-Control: no-store`, без сжатия. Каждая
+  отдача — запись в журнал скачиваний (участник, платформа, версия, файл, сеть, User-Agent).
+  Ошибки: 403 `invalid_ticket` — билет подделан или испорчен; 403 `ticket_expired` — срок вышел;
+  403 `forbidden` — устройство удалено или вышло из аккаунта, участник заблокирован, удален или
+  сменил пароль; 404 `not_found` — файла больше нет на сайте или в манифесте этой версии.
+
 ## Служебные адреса
 
 `GET /api/health` -> `{status:'ok', version:'<коммит сборки>'}` (liveness; `dev` вне сборки `deploy.sh`), `GET /api/ready` проверяет БД -> 200 или 503.

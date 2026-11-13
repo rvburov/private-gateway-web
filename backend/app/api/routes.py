@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.core.cookies import cookie_name, set_cookie
 from app.core.security.tokens import new_token
 from app.db.session import get_db
-from app.services import account, admin, auth, devices, downloads
+from app.services import account, admin, auth, devices, downloads, updates
 
 router = APIRouter(prefix="/api")
 Db = Annotated[AsyncSession, Depends(get_db)]
@@ -221,3 +221,20 @@ async def app_status(request: Request, db: Db) -> dict:
 async def app_logout(request: Request, db: Db) -> Response:
     await devices.app_logout(db, request)
     return Response(status_code=204)
+
+
+# Лента обновлений программы: подписанные манифесты и билеты на файлы своей платформы
+@router.get("/app/updates", response_model=schemas.AppUpdatesOut)
+async def app_updates(
+    request: Request,
+    db: Db,
+    platform: schemas.UpdatePlatform,
+    channel: schemas.UpdateChannel = "stable",
+) -> dict:
+    return await updates.feed(db, request, platform, channel)
+
+
+# Файл обновления по билету из ленты: Authorization не нужен, билет сам дает право
+@router.get("/app/updates/files/{ticket}")
+async def app_update_file(ticket: str, request: Request, db: Db):
+    return await updates.download(db, request, ticket)

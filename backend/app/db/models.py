@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     LargeBinary,
     String,
+    Text,
     false,
     text,
 )
@@ -149,6 +150,32 @@ class Release(Base):
     store_url: Mapped[str | None] = mapped_column(String(1000))
     enabled: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class AppUpdate(Base):
+    """Выпуск в ленте обновлений программы: манифест update.json байт в байт и его подпись.
+
+    Подпись (ECDSA, update.json.sig) и SHA-256 файлов проверяет сама программа встроенным
+    ключом: сайт хранит манифест как есть и подделать обновление не может. Файлы манифеста
+    лежат в хранилище выпусков по SHA-256. Повторный прием той же версии заменяет манифест и
+    подпись — так приходит новая доля раскатки.
+    """
+
+    __tablename__ = "app_updates"
+    __table_args__ = (
+        CheckConstraint("channel IN ('stable','beta')", name="app_update_channel"),
+        CheckConstraint("rollout BETWEEN 0 AND 100", name="app_update_rollout"),
+    )
+    version: Mapped[str] = mapped_column(String(64), primary_key=True)
+    channel: Mapped[str] = mapped_column(String(16))
+    rollout: Mapped[int]
+    # Время выпуска из манифеста (поле published)
+    published_at: Mapped[datetime]
+    manifest: Mapped[bytes] = mapped_column(LargeBinary)
+    # Содержимое update.json.sig без пробелов по краям: base64 подписи DER
+    signature: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class DownloadEvent(Base):

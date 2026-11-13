@@ -8,10 +8,15 @@
 - Коды вводятся без учета регистра, пробелов и дефисов. В БД лежит hash_code() —
   HMAC-SHA256 с секретом сервера (PGWEB_SECRET_KEY) от нормализованного кода: по утекшей
   базе коды не перебрать без секрета.
+- sign()/unsign() — подписанная строка для ссылки (билет на файл обновления): содержимое
+  открыто, но изменить его без секрета сервера нельзя. В БД билеты не хранятся.
 """
 
+import base64
+import binascii
 import hashlib
 import hmac
+import re
 import secrets
 
 from app.core.config import get_settings
@@ -77,3 +82,44 @@ def hash_code(code: str, prefix: str = "") -> str:
     normalized = normalize_code(code, prefix)
     key = get_settings().secret_key_bytes
     return hmac.new(key, b"code:" + normalized.encode(), hashlib.sha256).hexdigest()
+
+
+_SIGNED = re.compile(r"([A-Za-z0-9_-]{2,1024})\.([A-Za-z0-9_-]{43})")
+
+
+def _b64(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _mac(purpose: str, data: bytes) -> bytes:
+    # Назначение входит в подпись: строку одного назначения нельзя выдать за другое
+    key = get_settings().secret_key_bytes
+    return hmac.new(key, purpose.encode() + b":" + data, hashlib.sha256).digest()
+
+
+def sign(purpose: str, payload: str) -> str:
+    """base64url(payload).base64url(HMAC-SHA256(secret_key, purpose:payload)), без '='."""
+    data = payload.encode()
+    return _b64(data) + "." + _b64(_mac(purpose, data))
+
+
+def unsign(purpose: str, value: str) -> str | None:
+    """payload, если подпись сходится; иначе None (подделка, обрезка, чужое назначение)."""
+    match = _SIGNED.fullmatch(value)
+    if not match:
+        return None
+    head, tail = match.groups()
+    try:
+        data = base64.urlsafe_b64decode(head + "=" * (-len(head) % 4))
+        mac = base64.urlsafe_b64decode(tail + "=")
+    except (binascii.Error, ValueError):
+        return None
+    # Только каноническая запись: у одной подписанной строки нет второго написания
+    if _b64(data) != head or _b64(mac) != tail:
+        return None
+    if not hmac.compare_digest(mac, _mac(purpose, data)):
+        return None
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        return None

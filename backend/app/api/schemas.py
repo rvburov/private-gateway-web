@@ -255,6 +255,29 @@ class AppStatusOut(BaseModel):
     device: AppDeviceOut
 
 
+UpdatePlatform = Literal["windows", "macos", "linux", "android"]
+UpdateChannel = Literal["stable", "beta"]
+
+
+class AppUpdateFileOut(BaseModel):
+    # Абсолютная ссылка с билетом: без заголовка Authorization, до expires_at
+    url: str
+    expires_at: datetime
+
+
+class AppUpdateOut(BaseModel):
+    version: str
+    channel: UpdateChannel
+    # base64 точных байт update.json: подпись проверяется над ними
+    manifest: str
+    signature: str
+    files: dict[str, AppUpdateFileOut]
+
+
+class AppUpdatesOut(BaseModel):
+    releases: list[AppUpdateOut]
+
+
 class SessionOut(BaseModel):
     id: int
     label: str

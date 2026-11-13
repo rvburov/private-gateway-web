@@ -281,6 +281,21 @@ def _bearer(request: Request) -> str:
     return tokens.hash_token(match.group(1))
 
 
+def _app_access(now: datetime):
+    """Действующий доступ приложения: устройство не отозвано и не истекло, участник активен.
+
+    Удаление устройства, блокировка и смена пароля (auth_version) гасят и токен устройства,
+    и выданные ему билеты на файлы обновлений.
+    """
+    return (
+        AppDevice.revoked_at.is_(None),
+        AppDevice.expires_at > now,
+        AppDevice.auth_version == User.auth_version,
+        User.status == "active",
+        auth.two_factor_satisfied(),
+    )
+
+
 async def _app_device(
     db: AsyncSession, token_hash: str, *, lock: bool = True
 ) -> tuple[AppDevice, User]:
@@ -288,19 +303,29 @@ async def _app_device(
     query = (
         select(AppDevice, User)
         .join(User, User.id == AppDevice.user_id)
-        .where(
-            AppDevice.token_hash == token_hash,
-            AppDevice.revoked_at.is_(None),
-            AppDevice.expires_at > now,
-            AppDevice.auth_version == User.auth_version,
-            User.status == "active",
-            auth.two_factor_satisfied(),
-        )
+        .where(AppDevice.token_hash == token_hash, *_app_access(now))
     )
     pair = (await db.execute(query.with_for_update(of=AppDevice) if lock else query)).one_or_none()
     if not pair:
         raise AppError(401, "unauthorized")
     return pair[0], pair[1]
+
+
+async def app_device(db: AsyncSession, request: Request) -> tuple[AppDevice, User]:
+    """Устройство по заголовку Authorization, только чтение: токен не продлевается."""
+    return await _app_device(db, _bearer(request), lock=False)
+
+
+async def active_app_device(db: AsyncSession, device_id: int) -> tuple[AppDevice, User] | None:
+    """Устройство по номеру, пока его доступ действует (билет на файл обновления)."""
+    pair = (
+        await db.execute(
+            select(AppDevice, User)
+            .join(User, User.id == AppDevice.user_id)
+            .where(AppDevice.id == device_id, *_app_access(utcnow()))
+        )
+    ).one_or_none()
+    return (pair[0], pair[1]) if pair else None
 
 
 async def app_status(db: AsyncSession, request: Request) -> dict:

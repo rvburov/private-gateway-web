@@ -202,6 +202,76 @@ jobs:
           row="$(cd /opt/private-gateway-web/deploy && sudo -u deploy docker compose exec -T postgres \
             psql -U pgweb -d pgweb -tAc "select version from releases where platform = 'windows'")"
           test "$row" = 1.2.3
+      # Порядок workflow клиента: установщики (import, шаг выше), rpm (asset), подпись, манифест
+      - name: Лента обновлений клиента (asset, update-sig, update)
+        run: |
+          cmd=(bash /opt/private-gateway-web/deploy/import-release.sh --ssh)
+          imports=/opt/private-gateway-web/deploy/imports
+          send() { sudo -u deploy env SSH_ORIGINAL_COMMAND="$1" "${cmd[@]}" < "$2"; }
+          sql() {
+            (cd /opt/private-gateway-web/deploy && sudo -u deploy docker compose exec -T postgres \
+              psql -U pgweb -d pgweb -tAc "$1")
+          }
+          sum() { sha256sum "$1" | cut -d' ' -f1; }
+          # Манифест как у scripts/release.cs клиента: доля раскатки, затем файлы вида kind=путь
+          manifest() {
+            python3 - "$@" <<'PY'
+          import hashlib, json, os, sys
+          assets = {}
+          for item in sys.argv[2:]:
+              kind, path = item.split("=", 1)
+              data = open(path, "rb").read()
+              digest = hashlib.sha256(data).hexdigest()
+              assets[kind] = {"file": os.path.basename(path), "sha256": digest, "size": len(data)}
+          print(json.dumps({"version": "1.2.3", "channel": "stable", "rollout": int(sys.argv[1]),
+                            "published": "2026-11-13T12:00:00Z",
+                            "notes": "https://pgweb.localhost/downloads",
+                            "highlights": ["Проверка ленты обновлений."], "assets": assets},
+                           indent=2, ensure_ascii=False))
+          PY
+          }
+          signature() { head -c 70 /dev/urandom | base64 -w0 > "$1"; echo >> "$1"; }
+          msi=/tmp/PrivateGateway-1.2.3-win-x64.msi
+          rpm=/tmp/private-gateway-1.2.3-1.x86_64.rpm
+          deb=/tmp/private-gateway_1.2.3_amd64.deb
+          head -c 200000 /dev/urandom > "$rpm"
+          head -c 100000 /dev/urandom > "$deb"
+          sig=/tmp/update.json.sig
+          # rpm — только в хранилище, строки каталога нет
+          send "asset 1.2.3 ${rpm##*/} $(sum "$rpm")" "$rpm"
+          test "$(sql "select count(*) from releases")" = 1
+          manifest 20 win-x64-msi="$msi" linux-x64-rpm="$rpm" > /tmp/update.json
+          signature "$sig"
+          send "update-sig 1.2.3 update.json.sig $(sum "$sig")" "$sig"
+          send "update 1.2.3 update.json $(sum /tmp/update.json)" /tmp/update.json
+          row="$(sql "select version, channel, rollout, encode(sha256(manifest), 'hex'), signature from app_updates")"
+          test "$row" = "1.2.3|stable|20|$(sum /tmp/update.json)|$(tr -d '\n' < "$sig")"
+          test -z "$(sudo ls -A "$imports")"
+          # Раскатка: та же версия с новой долей и подписью заменяет строку
+          manifest 50 win-x64-msi="$msi" linux-x64-rpm="$rpm" > /tmp/update.json
+          signature "$sig"
+          send "update-sig 1.2.3 update.json.sig $(sum "$sig")" "$sig"
+          send "update 1.2.3 update.json $(sum /tmp/update.json)" /tmp/update.json
+          test "$(sql "select count(*), max(rollout), max(signature) from app_updates")" = "1|50|$(tr -d '\n' < "$sig")"
+          # Отказы: deb нет на сайте; SHA не тот; подписи нет, она израсходована или старше часа;
+          # бета, путь в имени, чужое имя подписи, лишнее слово
+          manifest 100 win-x64-msi="$msi" linux-x64-deb="$deb" > /tmp/missing.json
+          send "update-sig 1.2.3 update.json.sig $(sum "$sig")" "$sig"
+          if send "update 1.2.3 update.json $(sum /tmp/missing.json)" /tmp/missing.json; then exit 1; fi
+          send "update-sig 1.2.3 update.json.sig $(sum "$sig")" "$sig"
+          if send "update 1.2.3 update.json $(sum "$msi")" /tmp/update.json; then exit 1; fi
+          if send "update 1.2.3 update.json $(sum /tmp/update.json)" /tmp/update.json; then exit 1; fi
+          send "update-sig 1.2.3 update.json.sig $(sum "$sig")" "$sig"
+          sudo -u deploy touch -d '2 hours ago' "$imports/.update-1.2.3.json.sig"
+          if send "update 1.2.3 update.json $(sum /tmp/update.json)" /tmp/update.json; then exit 1; fi
+          if send "update-sig 1.2.3 update.json.sig $(sum "$msi")" "$sig"; then exit 1; fi
+          if send "asset 1.2.3 ${rpm##*/} $(sum "$msi")" "$rpm"; then exit 1; fi
+          if send "asset 1.3.0-beta.1 ${rpm##*/} $(sum "$rpm")" "$rpm"; then exit 1; fi
+          if send "asset 1.2.3 ../${rpm##*/} $(sum "$rpm")" "$rpm"; then exit 1; fi
+          if send "update-sig 1.2.3 other.sig $(sum "$sig")" "$sig"; then exit 1; fi
+          if send "update 1.2.3 update.json $(sum /tmp/update.json) extra" /tmp/update.json; then exit 1; fi
+          test "$(sql "select rollout from app_updates")" = 50
+          test -z "$(sudo ls -A "$imports")"
       - name: Повторный деплой и ограничение ключа CI
         run: |
           sudo -iu deploy bash /opt/private-gateway-web/deploy/deploy.sh --no-fetch --no-pull | tee /tmp/redeploy.log

@@ -1,7 +1,14 @@
-"""Приватное хранилище выпусков, без произвольных путей и внешних перенаправлений."""
+"""Приватное хранилище выпусков, без произвольных путей и внешних перенаправлений.
 
+Файлы лежат под именами <sha256>.bin в PGWEB_DOWNLOAD_ROOT. Их отдают каталог «Скачать
+клиент» (по сеансу сайта) и лента обновлений программы (services/updates.py, по билету).
+"""
+
+import hashlib
 import os
 import re
+import tempfile
+from io import BufferedReader
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
@@ -54,19 +61,90 @@ def app_store_url(value: str) -> bool:
     )
 
 
-def release_path(release: Release) -> Path | None:
-    if not release.storage_name or not re.fullmatch(r"[a-f0-9]{64}\.bin", release.storage_name):
+def stored_file(storage_name: str | None, size: int | None) -> Path | None:
+    """Файл хранилища <sha256>.bin нужного размера прямо в корне хранилища, не ссылка."""
+    if not storage_name or not re.fullmatch(r"[a-f0-9]{64}\.bin", storage_name):
         return None
     root = get_settings().download_root.resolve()
-    path = root / release.storage_name
+    path = root / storage_name
     try:
         if path.is_symlink() or path.resolve(strict=True).parent != root or not path.is_file():
             return None
-        if path.stat().st_size != release.size_bytes:
+        if path.stat().st_size != size:
             return None
     except OSError:
         return None
     return path
+
+
+def release_path(release: Release) -> Path | None:
+    return stored_file(release.storage_name, release.size_bytes)
+
+
+def store(source: Path) -> tuple[str, int, str]:
+    """Копирует проверенный файл в хранилище под именем <sha256>.bin: имя, размер, SHA-256.
+
+    Тот же файл повторно ложится на свое же имя, поэтому повторный прием безопасен.
+    """
+    root = get_settings().download_root.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256()
+    size = 0
+    fd, temporary = tempfile.mkstemp(prefix=".release-", dir=root)
+    try:
+        with os.fdopen(fd, "wb") as output, source.open("rb") as content:
+            while block := content.read(1024 * 1024):
+                digest.update(block)
+                output.write(block)
+                size += len(block)
+            output.flush()
+            os.fsync(output.fileno())
+        storage_name = digest.hexdigest() + ".bin"
+        os.chmod(temporary, 0o640)
+        os.replace(temporary, root / storage_name)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    return storage_name, size, digest.hexdigest()
+
+
+def open_stored(path: Path, size: int | None) -> BufferedReader | None:
+    """Открывает файл без перехода по ссылке и сверяет размер уже по дескриптору."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        return None
+    file = os.fdopen(fd, "rb")
+    if os.fstat(file.fileno()).st_size != size:
+        file.close()
+        return None
+    return file
+
+
+def file_response(
+    file: BufferedReader, filename: str, size: int, sha256: str | None
+) -> StreamingResponse:
+    """Ответ с файлом: тип по расширению, имя, точный размер и SHA-256 в заголовках."""
+
+    # Файлы выпуска в контейнере монтируются read-only; дескриптор защищает от подмены symlink.
+    def chunks():
+        try:
+            while block := file.read(1024 * 1024):
+                yield block
+        finally:
+            file.close()
+
+    # Cache-Control: no-store и nosniff добавляет SecurityMiddleware ко всем ответам API.
+    # Content-Length — точный размер: телефон показывает ход загрузки и проверяет конец файла
+    return StreamingResponse(
+        chunks(),
+        media_type=media_type(filename),
+        headers={
+            "Content-Disposition": content_disposition(filename),
+            "Content-Length": str(size),
+            "X-Checksum-SHA256": sha256 or "",
+        },
+    )
 
 
 async def catalog(db: AsyncSession, request: Request) -> dict:
@@ -111,18 +189,11 @@ async def download(db: AsyncSession, request: Request, platform: str) -> Streami
         select(Release).where(Release.platform == platform, Release.enabled.is_(True))
     )
     path = release_path(release) if release else None
-    if not path:
-        raise AppError(404, "not_found")
-    try:
-        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
-    except OSError:
-        raise AppError(404, "not_found") from None
-    file = os.fdopen(fd, "rb")
-    if os.fstat(file.fileno()).st_size != release.size_bytes:
-        file.close()
+    file = open_stored(path, release.size_bytes) if release and path else None
+    if release is None or file is None:
         raise AppError(404, "not_found")
     filename = release.filename or f"private-gateway-{platform}"
-    size, sha256 = release.size_bytes, release.sha256
+    size, sha256 = release.size_bytes or 0, release.sha256
     # Журнал скачиваний: запись до отдачи файла, чтобы ее не потерять при обрыве передачи
     db.add(
         DownloadEvent(
@@ -139,26 +210,7 @@ async def download(db: AsyncSession, request: Request, platform: str) -> Streami
     except Exception:
         file.close()
         raise
-
-    # Файлы выпуска в контейнере монтируются read-only; дескриптор защищает от подмены symlink.
-    def chunks():
-        try:
-            while block := file.read(1024 * 1024):
-                yield block
-        finally:
-            file.close()
-
-    # Cache-Control: no-store и nosniff добавляет SecurityMiddleware ко всем ответам API.
-    # Content-Length — точный размер: телефон показывает ход загрузки и проверяет конец файла
-    return StreamingResponse(
-        chunks(),
-        media_type=media_type(filename),
-        headers={
-            "Content-Disposition": content_disposition(filename),
-            "Content-Length": str(size),
-            "X-Checksum-SHA256": sha256 or "",
-        },
-    )
+    return file_response(file, filename, size, sha256)
 
 
 async def history(db: AsyncSession, user_id: int | None, limit: int, offset: int) -> dict:

@@ -57,4 +57,20 @@ except HTTPError as error:
 else:
     raise AssertionError("Неавторизованный запрос получил каталог загрузок")
 
-print(f"5 проверок стека {ORIGIN}: PASS")
+# Лента обновлений: без токена устройства — 401, поддельный билет на файл — 403
+try:
+    read("/api/app/updates?platform=windows")
+except HTTPError as error:
+    assert error.code == 401, error.code
+else:
+    raise AssertionError("Лента обновлений ответила без токена устройства")
+
+try:
+    read("/api/app/updates/files/AAAA." + "A" * 43)
+except HTTPError as error:
+    assert error.code == 403, error.code
+    assert json.load(error) == {"error": {"code": "invalid_ticket"}}
+else:
+    raise AssertionError("Поддельный билет получил файл обновления")
+
+print(f"7 проверок стека {ORIGIN}: PASS")

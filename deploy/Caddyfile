@@ -16,9 +16,10 @@
 }
 
 :8080 {
-	# Файлы клиента (/api/downloads/*) не сжимаются: телефон получает .apk байт в байт,
-	# с Content-Length и типом от API. Сжатие ничего не дает упакованным установщикам
-	@compressible not path /api/downloads/*
+	# Файлы клиента (/api/downloads/* и файлы ленты обновлений /api/app/updates/files/*) не
+	# сжимаются: телефон и служба получают файл байт в байт, с Content-Length и типом от API.
+	# Сжатие ничего не дает упакованным установщикам
+	@compressible not path /api/downloads/* /api/app/updates/files/*
 	encode @compressible zstd gzip
 	header {
 		X-Content-Type-Options nosniff
