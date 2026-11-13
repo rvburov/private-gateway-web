@@ -63,17 +63,32 @@ def assets(root, version: str, kinds=tuple(NAMES), *, stored=True) -> dict:
     return result
 
 
-def manifest(version: str, files: dict, *, rollout: int = 20, channel: str = "stable") -> bytes:
+def manifest(
+    version: str,
+    files: dict,
+    *,
+    rollout: int = 20,
+    channel: str = "stable",
+    highlights: tuple[str, ...] = ("Обновления приходят с сайта.", "Подпись проверяет программа."),
+) -> bytes:
     data = {
         "version": version,
         "channel": channel,
         "rollout": rollout,
         "published": "2026-11-13T09:30:00Z",
         "notes": "https://private-gateway.duckdns.org/downloads",
-        "highlights": ["Обновления приходят с сайта.", "Подпись проверяет программа."],
+        "highlights": list(highlights),
         "assets": files,
     }
     return (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode()
+
+
+def sized(version: str, files: dict, size: int) -> bytes:
+    """Верный манифест ровно size байт: длинная строка заметок, в конце «}» и перевод строки."""
+    padding = size - len(manifest(version, files, highlights=("",)))
+    data = manifest(version, files, highlights=("x" * padding,))
+    assert len(data) == size and data.endswith(b"}\n")
+    return data
 
 
 async def publish(tmp_path, version: str, data: bytes, signature: bytes = SIGNATURE + b"\n"):
@@ -94,13 +109,20 @@ async def publish(tmp_path, version: str, data: bytes, signature: bytes = SIGNAT
     await cli.run(args)
 
 
-async def refused(tmp_path, version: str, data: bytes, signature: bytes = SIGNATURE) -> str:
-    """Причина отказа publish-update; принятый манифест — ошибка теста."""
+async def outcome(tmp_path, version: str, data: bytes, signature: bytes = SIGNATURE) -> str:
+    """Итог publish-update: "accepted" или причина отказа (тест сверяет его assert)."""
     try:
         await publish(tmp_path, version, data, signature)
     except ValueError as error:
         return str(error)
-    raise AssertionError(f"publish-update accepted {version}")
+    return "accepted"
+
+
+async def refused(tmp_path, version: str, data: bytes, signature: bytes = SIGNATURE) -> str:
+    """Причина отказа publish-update; принятый манифест — ошибка теста."""
+    reason = await outcome(tmp_path, version, data, signature)
+    assert reason != "accepted", f"publish-update accepted {version}"
+    return reason
 
 
 async def member_device(clients, db, *, email="member@example.test", uids=("install-0000000001",)):
@@ -394,17 +416,26 @@ async def test_publish_update_refuses_what_programs_could_not_use(clients, db, s
         "android-apk": files["android-apk"] | {"size": files["android-apk"]["size"] + 1}
     }
     archives_only = {kind: files[kind] for kind in ("win-x64-zip", "linux-x64-tar")}
+
+    def renamed(name: str) -> dict:
+        """Файлы на месте, SHA-256 и размер верные — плохое только имя msi."""
+        return files | {"win-x64-msi": files["win-x64-msi"] | {"file": name}}
+
     cases = [
         ("1.2.3", manifest("1.2.3", missing), "linux-x64-rpm"),
         ("1.2.3", manifest("1.2.3", wrong_size), "android-apk"),
         ("1.2.4", manifest("1.2.3", files), "not for version 1.2.4"),
-        ("1.3.0-beta.1", manifest("1.3.0-beta.1", files, channel="beta"), "stable"),
+        # Бету не принимает уже версия, какой бы канал ни был в манифесте
+        ("1.3.0-beta.1", manifest("1.3.0-beta.1", files), "Only stable versions"),
+        ("1.3.0-beta.1", manifest("1.3.0-beta.1", files, channel="beta"), "Only stable versions"),
         ("1.2.3", manifest("1.2.3", files, channel="beta"), "stable channel"),
         ("1.2.3", b"{not json", "JSON"),
         ("1.2.3", b'["1.2.3"]', "JSON object"),
         ("1.2.3", manifest("1.2.3", files, rollout=101), "rollout"),
         ("1.2.3", manifest("1.2.3", archives_only), "no files for the update feed"),
-        ("1.2.3", manifest("1.2.3", {"win-x64-msi": {"file": "../x.msi"}}), "invalid asset"),
+        # Имя с папкой или кавычкой программа не примет: файл ляжет в ее папку загрузок
+        ("1.2.3", manifest("1.2.3", renamed("../x.msi")), "invalid asset 'win-x64-msi'"),
+        ("1.2.3", manifest("1.2.3", renamed('a"b.msi')), "invalid asset 'win-x64-msi'"),
     ]
     for version, data, reason in cases:
         assert reason in await refused(tmp_path, version, data)
@@ -414,6 +445,39 @@ async def test_publish_update_refuses_what_programs_could_not_use(clients, db, s
     # Тот же манифест со всеми файлами на месте принимается
     await publish(tmp_path, "1.2.3", manifest("1.2.3", files))
     assert await db.scalar(select(func.count()).select_from(AppUpdate)) == 1
+
+
+async def test_size_limits_refuse_instead_of_truncating(clients, db, store, tmp_path):
+    files = assets(store, "1.2.3")
+    limit = updates.MANIFEST_MAX_BYTES
+    # Манифест на байт длиннее 64 КБ: обрезанный до предела, он остался бы верным JSON
+    over = sized("1.2.3", files, limit + 1)
+    assert f"update.json is larger than {limit} bytes" in await refused(tmp_path, "1.2.3", over)
+    # Тот же предел у самого приема, без команды
+    try:
+        await updates.publish(db, "1.2.3", over, SIGNATURE)
+    except ValueError as error:
+        assert "update.json must be from 1 byte to 64 KB" in str(error)
+    else:
+        raise AssertionError("updates.publish accepted a manifest over 64 KB")
+    # Подпись — текст base64 до 1 КБ; файл с пробелами по краям — до 1088 байт
+    data = manifest("1.2.3", files)
+    longest = base64.b64encode(bytes(range(256)) * 3)
+    too_long = base64.b64encode(bytes(range(256)) * 3 + b"\x00\x01\x02")
+    assert (len(longest), len(too_long)) == (1024, 1028)
+    reason = await refused(tmp_path, "1.2.3", data, too_long + b"\n")
+    assert "update.json.sig must be base64 text up to 1 KB" in reason
+    # Файл подписи на байт длиннее: обрезанный до предела, он дал бы верную подпись
+    spaced = longest + b" " * 64
+    assert len(spaced) == updates.SIGNATURE_MAX_BYTES + 64
+    reason = await refused(tmp_path, "1.2.3", data, spaced + b"\n")
+    assert "update.json.sig is larger than 1088 bytes" in reason
+    assert await db.scalar(select(func.count()).select_from(AppUpdate)) == 0
+    # Ровно на пределах — принимаются
+    exact = sized("1.2.3", files, limit)
+    assert await outcome(tmp_path, "1.2.3", exact, spaced) == "accepted"
+    row = (await db.scalars(select(AppUpdate))).one()
+    assert (row.manifest, row.signature) == (exact, longest.decode())
 
 
 async def test_same_version_again_replaces_manifest_and_signature(clients, db, store, tmp_path):
@@ -436,6 +500,61 @@ async def test_same_version_again_replaces_manifest_and_signature(clients, db, s
     # Билет, выданный до смены доли, ведет к тому же файлу и действует
     anonymous = await clients(csrf=False, ip="203.0.113.62")
     assert (await anonymous.get(first["files"]["win-x64-msi"]["url"])).status_code == 200
+
+
+async def test_stopped_rollout_is_accepted_without_files_on_the_site(
+    clients, db, store, tmp_path, capsys
+):
+    _, _, app, (token,) = await member_device(clients, db)
+    files = assets(store, "1.2.3")
+    await publish(tmp_path, "1.2.3", manifest("1.2.3", files))
+    # Сервер восстановлен из бэкапа: манифест в базе, а rpm в хранилище еще не внесен заново
+    rpm = files["linux-x64-rpm"]
+    (store / f"{rpm['sha256']}.bin").unlink()
+    capsys.readouterr()
+    # Стоп-кран (доля 0, только update-sig и update) проходит: такой выпуск программа не ставит
+    stop = manifest("1.2.3", files, rollout=0)
+    assert await outcome(tmp_path, "1.2.3", stop) == "accepted"
+    assert f"Not in the download store yet: linux-x64-rpm {rpm['file']}" in capsys.readouterr().out
+    db.expire_all()
+    row = (await db.scalars(select(AppUpdate))).one()
+    assert (row.rollout, row.manifest) == (0, stop)
+    # Доля больше 0 без файла — по-прежнему отказ, в ленте остается стоп-кран без ссылок
+    assert "linux-x64-rpm" in await refused(tmp_path, "1.2.3", manifest("1.2.3", files, rollout=50))
+    (release,) = await feed(app, token, "linux")
+    assert base64.b64decode(release["manifest"]) == stop and release["files"] == {}
+    # Файл внесли заново — новая доля проходит, ссылки снова в ленте
+    assets(store, "1.2.3", ("linux-x64-rpm",))
+    assert await outcome(tmp_path, "1.2.3", manifest("1.2.3", files, rollout=50)) == "accepted"
+    (release,) = await feed(app, token, "linux")
+    assert set(release["files"]) == {"linux-x64-deb", "linux-x64-rpm"}
+
+
+async def test_stopped_rollout_gives_no_files_and_refuses_earlier_tickets(
+    clients, db, store, tmp_path
+):
+    _, _, app, (token,) = await member_device(clients, db)
+    files = assets(store, "1.2.3")
+    await publish(tmp_path, "1.2.3", manifest("1.2.3", files, rollout=100))
+    (release,) = await feed(app, token)
+    url = release["files"]["win-x64-msi"]["url"]
+    anonymous = await clients(csrf=False, ip="203.0.113.64")
+    assert (await anonymous.get(url)).status_code == 200
+    # Стоп-кран: выпуск остается в ленте без ссылок, а билет, выданный до остановки, не действует
+    await publish(tmp_path, "1.2.3", manifest("1.2.3", files, rollout=0))
+    for platform in FEED:
+        (stopped,) = await feed(app, token, platform)
+        assert (stopped["version"], stopped["files"]) == ("1.2.3", {}), platform
+    response = await anonymous.get(url)
+    assert response.status_code == 403
+    assert response.json() == {"error": {"code": "rollout_stopped"}}
+    # Новая доля больше 0 — ссылки снова в ленте, и тот же билет снова действует
+    await publish(tmp_path, "1.2.3", manifest("1.2.3", files, rollout=10))
+    (resumed,) = await feed(app, token)
+    assert set(resumed["files"]) == {"win-x64-msi"}
+    assert (await anonymous.get(url)).status_code == 200
+    # Отказ в журнал скачиваний не попадает
+    assert await db.scalar(select(func.count()).select_from(DownloadEvent)) == 2
 
 
 async def test_store_file_keeps_the_file_without_a_catalog_row(clients, db, store, tmp_path):

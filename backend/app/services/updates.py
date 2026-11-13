@@ -5,12 +5,14 @@
 его вносит publish() (cli publish-update). Манифест хранится байт в байт: подпись ECDSA и
 SHA-256 файлов проверяет программа встроенным ключом, поэтому подделать обновление сайт не
 может, может только не показать его. Повторный прием той же версии заменяет манифест и
-подпись: так приходит новая доля раскатки.
+подпись: так приходит новая доля раскатки. Долю 0 (стоп-кран) сайт принимает и без файлов в
+хранилище: такой выпуск программа не ставит, а сайт не дает на него ссылок и не отдает его
+файлы даже по билетам, выданным до остановки.
 
 Ленту (feed) берет устройство своим токеном, как /api/app/status. Файл — по билету из ленты:
 HMAC секретом сайта над device_id|version|kind|sha256|exp, живет 30 минут и действует, пока
-устройство не отозвано и участник не заблокирован. Билет сам — право: службе десктопа токен
-устройства не нужен, ленту ей передает окно.
+устройство не отозвано, участник не заблокирован и раскатка версии не остановлена. Билет сам —
+право: службе десктопа токен устройства не нужен, ленту ей передает окно.
 """
 
 import base64
@@ -135,7 +137,9 @@ def _signature(data: bytes) -> str:
 async def publish(db: AsyncSession, version: str, manifest: bytes, signature: bytes) -> dict:
     """Вносит манифест выпуска и его подпись; файлы ленты из манифеста уже лежат в хранилище.
 
-    Ошибка — ValueError с причиной: команда publish-update печатает ее и ничего не меняет.
+    Кроме доли 0: стоп-кран проходит и без файлов (например, после восстановления сервера, пока
+    файлы не внесены заново), их список — в missing. Ошибка — ValueError с причиной: команда
+    publish-update печатает ее и ничего не меняет.
     """
     if len(version) > 64 or not STABLE_VERSION.fullmatch(version):
         raise ValueError("Only stable versions X.Y.Z are accepted for the update feed for now")
@@ -158,22 +162,25 @@ async def publish(db: AsyncSession, version: str, manifest: bytes, signature: by
     assets = parsed.get("assets")
     if not isinstance(assets, dict) or not assets:
         raise ValueError("update.json has no assets")
-    served = []
+    served, missing = [], []
     for kind, value in assets.items():
         asset = _asset(value)
         if not KIND.fullmatch(kind) or asset is None:
             raise ValueError(f"update.json: invalid asset {kind[:40]!r}")
         if kind not in KIND_PLATFORM:
             continue
-        # Иначе у программ будет 404 вместо обновления: сначала файлы, манифест последним
-        if stored_file(asset["sha256"] + ".bin", asset["size"]) is None:
-            raise ValueError(
-                f"{kind} {asset['file']} is not in the download store: send it first "
-                "(import-release.sh import or asset)"
-            )
         served.append(kind)
+        if stored_file(asset["sha256"] + ".bin", asset["size"]) is None:
+            missing.append(f"{kind} {asset['file']}")
     if not served:
         raise ValueError("update.json has no files for the update feed")
+    # Сначала файлы, манифест последним: иначе программам достался бы выпуск без файла. Долю 0
+    # программа не ставит, а остановить раскатку должно быть можно всегда
+    if missing and rollout:
+        raise ValueError(
+            f"{missing[0]} is not in the download store: send it first "
+            "(import-release.sh import or asset)"
+        )
     text = _signature(signature)
     now = utcnow()
     values = {
@@ -190,7 +197,7 @@ async def publish(db: AsyncSession, version: str, manifest: bytes, signature: by
         .on_conflict_do_update(index_elements=[AppUpdate.version], set_=values)
     )
     await db.commit()
-    return {"version": version, "rollout": rollout, "files": served}
+    return {"version": version, "rollout": rollout, "files": served, "missing": missing}
 
 
 async def feed(db: AsyncSession, request: Request, platform: str, channel: str) -> dict:
@@ -213,7 +220,8 @@ async def feed(db: AsyncSession, request: Request, platform: str, channel: str) 
         row = rows.get(version)
         if row is None:
             continue
-        assets = _assets(row.manifest)
+        # Стоп-кран (доля 0) держит и сайт: выпуск остается в ленте, но без ссылок на файлы
+        assets = _assets(row.manifest) if row.rollout else {}
         files = {}
         # Только файлы своей платформы, которые есть в манифесте и в хранилище
         for kind in PLATFORM_KINDS[platform]:
@@ -253,6 +261,9 @@ async def download(db: AsyncSession, request: Request, ticket: str) -> Streaming
         raise AppError(403, "forbidden")
     _, user = pair
     row = await db.get(AppUpdate, version)
+    # Стоп-кран закрывает и билеты, выданные до него; новая доля больше 0 открывает их снова
+    if row is not None and row.rollout == 0:
+        raise AppError(403, "rollout_stopped")
     asset = _assets(row.manifest).get(kind) if row else None
     if asset is None or asset["sha256"] != sha256:
         raise AppError(404, "not_found")

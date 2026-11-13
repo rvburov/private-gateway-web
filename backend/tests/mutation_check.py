@@ -303,6 +303,70 @@ cases = [
         ".on_conflict_do_nothing(index_elements=[AppUpdate.version])",
         "test_updates.py::test_same_version_again_replaces_manifest_and_signature",
     ),
+    # 2026-11-13: замечания разбора ленты — имя файла, бета, пределы размера, стоп-кран
+    (
+        "asset_name_unchecked",
+        "app/services/updates.py",
+        "    if not isinstance(name, str) or not FILE_NAME.fullmatch(name):\n",
+        "    if not isinstance(name, str):\n",
+        "test_updates.py::test_publish_update_refuses_what_programs_could_not_use",
+    ),
+    (
+        "asset_name_allows_quotes",
+        "app/services/updates.py",
+        'FILE_NAME = re.compile(r"[A-Za-z0-9_~+-][A-Za-z0-9._~+-]{0,199}")',
+        r'FILE_NAME = re.compile(r"[^./\\][^/\\]{0,199}")',
+        "test_updates.py::test_publish_update_refuses_what_programs_could_not_use",
+    ),
+    (
+        "publish_accepts_prerelease",
+        "app/services/updates.py",
+        r'STABLE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")',
+        r'STABLE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?")',
+        "test_updates.py::test_publish_update_refuses_what_programs_could_not_use",
+    ),
+    (
+        "manifest_size_unchecked",
+        "app/services/updates.py",
+        "    if not manifest or len(manifest) > MANIFEST_MAX_BYTES:\n",
+        "    if not manifest:\n",
+        "test_updates.py::test_size_limits_refuse_instead_of_truncating",
+    ),
+    (
+        "signature_size_unchecked",
+        "app/services/updates.py",
+        "if not value or len(value) > SIGNATURE_MAX_BYTES or not SIGNATURE.fullmatch(value):",
+        "if not value or not SIGNATURE.fullmatch(value):",
+        "test_updates.py::test_size_limits_refuse_instead_of_truncating",
+    ),
+    (
+        "read_small_truncates",
+        "app/cli.py",
+        "        data = content.read(limit + 1)\n",
+        "        data = content.read(limit)\n",
+        "test_updates.py::test_size_limits_refuse_instead_of_truncating",
+    ),
+    (
+        "stop_rollout_needs_files",
+        "app/services/updates.py",
+        "    if missing and rollout:\n",
+        "    if missing:\n",
+        "test_updates.py::test_stopped_rollout_is_accepted_without_files_on_the_site",
+    ),
+    (
+        "stopped_release_files_in_feed",
+        "app/services/updates.py",
+        "        assets = _assets(row.manifest) if row.rollout else {}\n",
+        "        assets = _assets(row.manifest)\n",
+        "test_updates.py::test_stopped_rollout_gives_no_files_and_refuses_earlier_tickets",
+    ),
+    (
+        "stopped_release_downloadable",
+        "app/services/updates.py",
+        "    if row is not None and row.rollout == 0:\n",
+        "    if False:\n",
+        "test_updates.py::test_stopped_rollout_gives_no_files_and_refuses_earlier_tickets",
+    ),
 ]
 only = set(sys.argv[1:])
 if not os.environ.get("PGWEB_TEST_DATABASE_URL"):

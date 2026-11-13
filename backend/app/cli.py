@@ -139,6 +139,9 @@ async def run(args: argparse.Namespace) -> None:
                 f"Update feed: {result['version']}, rollout {result['rollout']} %, "
                 f"files {', '.join(result['files'])}"
             )
+            # Стоп-кран принимается и без файлов на сайте: до новой доли их нужно прислать заново
+            if result["missing"]:
+                print("Not in the download store yet: " + ", ".join(result["missing"]))
         elif args.command == "set-ios":
             if not app_store_url(args.url):
                 raise ValueError("Expected existing HTTPS apps.apple.com URL with numeric app id")
