@@ -74,7 +74,14 @@ expires_at:ISO8601,used_at:ISO8601|null,revoked_at:ISO8601|null}`.
 `GET /api/downloads` -> `{items: Download[]}` только после входа.
 `Download = {platform:'windows'|'macos'|'ios'|'linux'|'android',available:boolean,
 version:string|null,filename:string|null,size_bytes:number|null,sha256:string|null,
-url:string|null}`. По умолчанию все unavailable, без выдуманных версий/ссылок.
+url:string|null,variants:DownloadVariant[]|null}`. По умолчанию все unavailable, без выдуманных
+версий/ссылок. `variants` используется только для macOS: два объекта с теми же полями файла
+(без `platform`) и `architecture:'arm64'|'x64'`. Верхние поля macOS и прежний URL относятся
+к Apple silicon (M). Intel имеет отдельный URL `/api/downloads/macos/file?architecture=x64`:
+требуется действующий сеанс, разрешенный текущий выпуск macOS и файл `osx-x64-dmg` в принятом
+стабильном манифесте этой же версии с долей раскатки больше 0 и в хранилище. Отсутствующий
+Intel-файл не заменяется ARM-файлом. В старом выпуске без Intel его вариант unavailable.
+Другие значения `architecture` и этот параметр для других платформ дают 404.
 Для опубликованного файла URL `/api/downloads/{platform}/file`, снова проверяющий сеанс и доступ.
 Ответ: тип по расширению (`.apk` — `application/vnd.android.package-archive`, `.msi`, `.dmg`, `.deb`
 — свои, иначе `application/octet-stream`), `Content-Disposition: attachment; filename="<ASCII>";
@@ -160,7 +167,8 @@ CSRF к ним не применяется; доступ — только по �
   обновление и версию для отката. Канал `stable` — только стабильные выпуски, `beta` — и бета
   (сайт пока принимает только стабильные).
 - `files` — только виды своей платформы, которые есть в манифесте и лежат на сайте: windows —
-  `win-x64-msi`; linux — `linux-x64-deb`, `linux-x64-rpm`; macos — `osx-arm64-dmg`; android —
+  `win-x64-msi`; linux — `linux-x64-deb`, `linux-x64-rpm`; macos — `osx-arm64-dmg`,
+  `osx-x64-dmg`; android —
   `android-apk`. Выпуск без файлов своей платформы остается в списке с пустым `files`.
   Стоп-кран — доля раскатки 0 в текущем манифесте версии — держит и сайт: такой выпуск остается
   в списке (манифест и подпись нужны программе), но `files` у него всегда пустой. Манифест с

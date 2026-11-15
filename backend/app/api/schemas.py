@@ -212,14 +212,22 @@ class ResetCodeOut(BaseModel):
     expires_at: datetime
 
 
-class DownloadOut(BaseModel):
-    platform: Literal["windows", "macos", "ios", "linux", "android"]
+class DownloadFileOut(BaseModel):
     available: bool
     version: str | None
     filename: str | None
     size_bytes: int | None
     sha256: str | None
     url: str | None
+
+
+class DownloadVariantOut(DownloadFileOut):
+    architecture: Literal["arm64", "x64"]
+
+
+class DownloadOut(DownloadFileOut):
+    platform: Literal["windows", "macos", "ios", "linux", "android"]
+    variants: list[DownloadVariantOut] | None = None
 
 
 class DownloadsOut(BaseModel):

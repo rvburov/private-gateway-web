@@ -1,5 +1,6 @@
 /* English copy for the static review prototype. Russian remains the source copy. */
 window.PG_TRANSLATIONS = {
+  "Выберите чип из меню Apple → Об этом Mac.": "Choose the chip shown in Apple menu → About This Mac.",
   "МАКЕТ": "PREVIEW",
   "Макет": "Preview",
   "Данные и действия демонстрационные": "Demo data and actions",

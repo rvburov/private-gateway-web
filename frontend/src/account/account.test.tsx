@@ -50,6 +50,18 @@ describe('release links and invitation state', () => {
     expect(safeDownloadUrl(file({ platform: 'ios', available: true, url: 'https://secret@apps.apple.com/app/id123' }))).toBeNull();
     expect(safeDownloadUrl(file({ platform: 'ios', available: false, url: 'https://apps.apple.com/app/id123' }))).toBeNull();
   });
+  it('keeps each Mac architecture on its exact private endpoint', () => {
+    const mac = file({ platform: 'macos', available: true });
+    expect(safeDownloadUrl({ ...mac, architecture: 'arm64', url: '/api/downloads/macos/file' })).toBe('/api/downloads/macos/file');
+    expect(safeDownloadUrl({ ...mac, architecture: 'x64', url: '/api/downloads/macos/file?architecture=x64' })).toBe('/api/downloads/macos/file?architecture=x64');
+    expect(safeDownloadUrl({ ...mac, architecture: 'x64', url: '/api/downloads/macos/file' })).toBeNull();
+    expect(safeDownloadUrl({ ...mac, architecture: 'arm64', url: '/api/downloads/macos/file?architecture=x64' })).toBeNull();
+    expect(safeDownloadUrl({ ...mac, url: '/api/downloads/macos/file?architecture=x64' })).toBeNull();
+    expect(safeDownloadUrl({ ...mac, platform: 'windows', architecture: 'x64', url: '/api/downloads/windows/file?architecture=x64' })).toBeNull();
+    for (const suffix of ['&redirect=evil', '#extra', '&architecture=arm64']) {
+      expect(safeDownloadUrl({ ...mac, architecture: 'x64', url: `/api/downloads/macos/file?architecture=x64${suffix}` })).toBeNull();
+    }
+  });
   it('treats used and revoked invitations as unavailable even before expiry', () => {
     expect(inviteStatus(invite, Date.parse('2026-01-02'))).toBe('active');
     expect(inviteStatus(invite, Date.parse('2100-01-02'))).toBe('expired');
@@ -64,7 +76,7 @@ describe('account downloads', () => {
     vi.mocked(request).mockResolvedValue({ items: [] });
     view(<DownloadsPage />);
     await screen.findByRole('heading', { name: 'Windows' });
-    expect(screen.getAllByRole('button', { name: 'Not available yet' })).toHaveLength(4);
+    expect(screen.getAllByRole('button', { name: 'Not available yet' })).toHaveLength(3);
     for (const button of screen.getAllByRole('button', { name: 'Not available yet' })) expect(button).toBeDisabled();
     expect(screen.getByText('App Store · not available yet')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Download for/ })).not.toBeInTheDocument();
@@ -75,7 +87,42 @@ describe('account downloads', () => {
     expect(await screen.findByRole('link', { name: 'Download for Windows' })).toHaveAttribute('href', '/api/downloads/windows/file');
     expect(screen.getByText('client-test.exe')).toBeInTheDocument();
     expect(screen.getByText('Version test-build')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Not available yet' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Not available yet' })).toHaveLength(2);
+  });
+  it('shows both Mac chips with separate files, without inferring a chip from the browser', async () => {
+    asVisitor(agents.macos);
+    const mac = file({ platform: 'macos', variants: [
+      { architecture: 'arm64', available: true, version: '0.3.1', filename: 'PrivateGateway-0.3.1-osx-arm64.dmg', size_bytes: 1024, sha256: 'arm-checksum', url: '/api/downloads/macos/file' },
+      { architecture: 'x64', available: true, version: '0.3.1', filename: 'PrivateGateway-0.3.1-osx-x64.dmg', size_bytes: 2048, sha256: 'intel-checksum', url: '/api/downloads/macos/file?architecture=x64' },
+    ] });
+    vi.mocked(request).mockResolvedValue({ items: [mac] });
+    view(<DownloadsPage />);
+    expect(await screen.findByRole('link', { name: 'Download for macOS · Apple silicon (M)' })).toHaveAttribute('href', '/api/downloads/macos/file');
+    const intel = screen.getByRole('link', { name: 'Download for macOS · Intel' });
+    expect(intel).toHaveAttribute('href', '/api/downloads/macos/file?architecture=x64');
+    const choice = intel.closest<HTMLElement>('.ac-mac-choice')!;
+    expect(within(choice).getByText('PrivateGateway-0.3.1-osx-x64.dmg')).toBeInTheDocument();
+    expect(within(choice).getByText('intel-checksum')).toBeInTheDocument();
+    expect(within(choice).queryByText('arm-checksum')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Download for macOS$/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Choose the chip shown in Apple menu → About This Mac.')).toBeInTheDocument();
+  });
+  it('labels the legacy Mac installer as Apple silicon and leaves Intel unavailable', async () => {
+    app.lang = 'ru';
+    vi.mocked(request).mockResolvedValue({ items: [file({ platform: 'macos', available: true, url: '/api/downloads/macos/file' })] });
+    view(<DownloadsPage />);
+    expect(await screen.findByRole('link', { name: 'Скачать для macOS · Apple silicon (M)' })).toHaveAttribute('href', '/api/downloads/macos/file');
+    expect(screen.getByRole('button', { name: 'Скачать для macOS · Intel' })).toBeDisabled();
+    expect(screen.getByText('Выберите чип из меню Apple → Об этом Mac.')).toBeInTheDocument();
+  });
+  it('does not fall back to ARM when an Intel choice contains the ARM URL', async () => {
+    vi.mocked(request).mockResolvedValue({ items: [file({ platform: 'macos', available: true, url: '/api/downloads/macos/file', variants: [
+      { architecture: 'x64', available: true, version: '0.3.1', filename: 'Intel.dmg', size_bytes: 1024, sha256: 'intel-checksum', url: '/api/downloads/macos/file' },
+    ] })] });
+    view(<DownloadsPage />);
+    expect(await screen.findByRole('button', { name: 'Download for macOS · Intel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download for macOS · Apple silicon (M)' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: /Download for macOS/ })).not.toBeInTheDocument();
   });
   it('renders a retryable API error without presenting empty data as a valid catalog', async () => {
     vi.mocked(request).mockRejectedValueOnce(new ApiError(503, 'server_error')).mockResolvedValueOnce({ items: [] });
@@ -274,11 +321,12 @@ describe('downloads for the visitor system', () => {
       asVisitor(agent, touch);
       vi.mocked(request).mockResolvedValue({ items: allAvailable });
       view(<DownloadsPage />);
-      await screen.findByRole('link', { name: `Download for ${first}` });
+      const downloadName = first === 'macOS' ? 'Download for macOS · Apple silicon (M)' : `Download for ${first}`;
+      await screen.findByRole('link', { name: downloadName });
       expect(titles()[0]).toBe(first);
       const primary = screen.getAllByRole('link', { name: /^Download for/ }).filter((link) => link.classList.contains('primary'));
-      expect(primary.map((link) => link.textContent)).toEqual([`Download for ${first}`]);
-      const card = screen.getByRole('link', { name: `Download for ${first}` }).closest('article')!;
+      expect(primary.map((link) => link.textContent)).toEqual([downloadName]);
+      const card = screen.getByRole('link', { name: downloadName }).closest('article')!;
       expect(card).toHaveClass('is-featured');
       expect(within(card).getByText('Your system')).toBeInTheDocument();
       expect(document.querySelectorAll('.ac-download-card.is-featured')).toHaveLength(1);

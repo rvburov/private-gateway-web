@@ -20,8 +20,9 @@ from starlette.responses import StreamingResponse
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.net import device_label, mask_ip, user_agent
-from app.db.models import DownloadEvent, Release, User
+from app.db.models import AppUpdate, DownloadEvent, Release, User
 from app.services.auth import client_ip, current_user
+from app.services.release_assets import manifest_assets
 
 PLATFORMS = ("windows", "macos", "ios", "linux", "android")
 # Тип файла по расширению: Android открывает установщик по типу .apk, иначе файл «не открыть»
@@ -178,29 +179,72 @@ async def catalog(db: AsyncSession, request: Request) -> dict:
                 else None,
             }
         )
+        if platform == "macos":
+            arm = {key: value for key, value in items[-1].items() if key != "platform"}
+            intel = await macos_intel_asset(db, release)
+            items[-1]["variants"] = [
+                {"architecture": "arm64", **arm},
+                {
+                    "architecture": "x64",
+                    "available": intel is not None,
+                    "version": release.version if intel else None,
+                    "filename": intel["file"] if intel else None,
+                    "size_bytes": intel["size"] if intel else None,
+                    "sha256": intel["sha256"] if intel else None,
+                    "url": "/api/downloads/macos/file?architecture=x64" if intel else None,
+                },
+            ]
     return {"items": items}
 
 
-async def download(db: AsyncSession, request: Request, platform: str) -> StreamingResponse:
+async def macos_intel_asset(db: AsyncSession, release: Release | None) -> dict | None:
+    """Intel берется только из принятого манифеста текущего разрешенного выпуска macOS.
+
+    `import macos` сохраняет Apple silicon, `asset` кладет Intel в то же приватное хранилище.
+    Отдельная платформа и миграция не нужны; старая версия без Intel остается рабочей.
+    """
+    if release is None or not release.enabled:
+        return None
+    update = await db.get(AppUpdate, release.version)
+    if update is None or update.channel != "stable" or update.rollout == 0:
+        return None
+    asset = manifest_assets(update.manifest).get("osx-x64-dmg")
+    if asset is None or stored_file(asset["sha256"] + ".bin", asset["size"]) is None:
+        return None
+    return asset
+
+
+async def download(
+    db: AsyncSession, request: Request, platform: str, architecture: str | None = None
+) -> StreamingResponse:
     user = await current_user(db, request)
     if platform not in PLATFORMS or platform == "ios":
+        raise AppError(404, "not_found")
+    if architecture is not None and (platform != "macos" or architecture != "x64"):
         raise AppError(404, "not_found")
     release = await db.scalar(
         select(Release).where(Release.platform == platform, Release.enabled.is_(True))
     )
-    path = release_path(release) if release else None
-    file = open_stored(path, release.size_bytes) if release and path else None
+    intel = await macos_intel_asset(db, release) if architecture == "x64" else None
+    if architecture == "x64":
+        path = stored_file(intel["sha256"] + ".bin", intel["size"]) if intel else None
+        filename = intel["file"] if intel else None
+        size, sha256 = (intel["size"], intel["sha256"]) if intel else (0, None)
+    else:
+        path = release_path(release) if release else None
+        filename = release.filename if release else None
+        size, sha256 = (release.size_bytes or 0, release.sha256) if release else (0, None)
+    file = open_stored(path, size) if path else None
     if release is None or file is None:
         raise AppError(404, "not_found")
-    filename = release.filename or f"private-gateway-{platform}"
-    size, sha256 = release.size_bytes or 0, release.sha256
+    filename = filename or f"private-gateway-{platform}"
     # Журнал скачиваний: запись до отдачи файла, чтобы ее не потерять при обрыве передачи
     db.add(
         DownloadEvent(
             user_id=user.id,
             platform=platform,
             version=release.version,
-            filename=release.filename,
+            filename=filename,
             ip_masked=mask_ip(client_ip(request)),
             user_agent=user_agent(request),
         )

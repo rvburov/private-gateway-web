@@ -28,11 +28,12 @@ NAMES = {
     "linux-x64-tar": "PrivateGateway-{v}-linux-x64.tar.gz",
     "osx-arm64-tar": "PrivateGateway-{v}-osx-arm64.tar.gz",
     "osx-arm64-dmg": "PrivateGateway-{v}-osx-arm64.dmg",
+    "osx-x64-dmg": "PrivateGateway-{v}-osx-x64.dmg",
     "android-apk": "PrivateGateway-{v}-android.apk",
 }
 FEED = {
     "windows": {"win-x64-msi"},
-    "macos": {"osx-arm64-dmg"},
+    "macos": {"osx-arm64-dmg", "osx-x64-dmg"},
     "linux": {"linux-x64-deb", "linux-x64-rpm"},
     "android": {"android-apk"},
 }
@@ -266,6 +267,7 @@ async def test_ticket_download_is_the_stored_file_with_headers_and_a_log_entry(
     for platform, kind, media in (
         ("android", "android-apk", "application/vnd.android.package-archive"),
         ("windows", "win-x64-msi", "application/x-msi"),
+        ("macos", "osx-x64-dmg", "application/x-apple-diskimage"),
     ):
         (release,) = await feed(app, token, platform)
         response = await service.get(
@@ -287,6 +289,7 @@ async def test_ticket_download_is_the_stored_file_with_headers_and_a_log_entry(
     assert [(e.platform, e.version, e.filename) for e in events] == [
         ("android", "1.2.3", files["android-apk"]["file"]),
         ("windows", "1.2.3", files["win-x64-msi"]["file"]),
+        ("macos", "1.2.3", files["osx-x64-dmg"]["file"]),
     ]
     for event in events:
         assert event.user_id == user["user"]["id"]
@@ -343,8 +346,14 @@ async def test_ticket_lives_thirty_minutes(clients, db, store, tmp_path, monkeyp
     assert expired.json() == {"error": {"code": "ticket_expired"}}
 
 
+@pytest.mark.parametrize("kind", ["android-apk", "osx-x64-dmg"])
 async def test_ticket_stops_when_the_device_or_member_loses_access(
-    clients, db, store, tmp_path, totp_clock
+    clients,
+    db,
+    store,
+    tmp_path,
+    totp_clock,
+    kind,
 ):
     admin_client = await clients(ip="198.51.100.61")
     admin = await register_user(admin_client, db, "admin@example.test", role="admin")
@@ -352,7 +361,8 @@ async def test_ticket_stops_when_the_device_or_member_loses_access(
     browser, user, app, tokens = await member_device(clients, db, uids=uids)
     await publish(tmp_path, "1.2.3", manifest("1.2.3", assets(store, "1.2.3")))
     urls = [
-        (await feed(app, token, "android"))[0]["files"]["android-apk"]["url"] for token in tokens
+        (await feed(app, token, updates.KIND_PLATFORM[kind]))[0]["files"][kind]["url"]
+        for token in tokens
     ]
     anonymous = await clients(csrf=False, ip="203.0.113.61")
 

@@ -201,8 +201,8 @@ async def catalog(request: Request, db: Db) -> dict:
 
 
 @router.get("/downloads/{platform}/file")
-async def download(platform: str, request: Request, db: Db):
-    return await downloads.download(db, request, platform)
+async def download(platform: str, request: Request, db: Db, architecture: str | None = None):
+    return await downloads.download(db, request, platform, architecture)
 
 
 # Приложение Private Gateway: вход по аккаунту сайта, затем только заголовок Authorization.

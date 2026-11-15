@@ -230,3 +230,11 @@
  .ac-download-card>.ac-checksum {grid-column:1/-1}
  .ac-ios h3 .ac-tag {display:inline-flex;font-size:8px}
 }
+
+/* Обе архитектуры Mac выбираются явно: User-Agent не определяет чип. */
+.ac-mac-downloads {width:100%;grid-column:1/-1}
+.ac-mac-hint {font-size:11px;line-height:1.55;color:var(--fg-2);margin:0 0 14px}
+.ac-mac-choice+.ac-mac-choice {border-top:1px solid var(--line);margin-top:16px;padding-top:16px}
+.ac-mac-choice .ac-download-btn {width:100%;margin-top:0;white-space:normal;text-align:center}
+.ac-mac-choice .ac-file-label {margin-top:10px}
+@media(max-width:520px){.ac-mac-downloads{margin-top:20px}.ac-mac-hint{font-size:11px}}

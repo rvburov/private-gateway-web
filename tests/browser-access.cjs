@@ -103,8 +103,18 @@ async function enroll(page, secret, previous = false) {
     // Заголовок появляется до ответа /api/downloads; кнопки считаются после загрузки сетки.
     await member.locator('.ac-download-grid').waitFor();
     const catalog = (await (await member.request.get(`${base}/api/downloads`)).json()).items;
-    const published = catalog.filter(item => item.available && item.platform !== 'ios').length;
-    assert.equal(await member.getByRole('button', { name: 'Not available yet', exact: true }).count(), 4 - published);
+    const published = catalog.filter(item => item.available && !['ios', 'macos'].includes(item.platform)).length;
+    assert.equal(await member.getByRole('button', { name: 'Not available yet', exact: true }).count(), 3 - published);
+    const mac = catalog.find(item => item.platform === 'macos');
+    for (const [architecture, chip] of [['arm64', 'Apple silicon (M)'], ['x64', 'Intel']]) {
+      const variant = mac?.variants?.find(item => item.architecture === architecture)
+        || (architecture === 'arm64' && !mac?.variants ? mac : null);
+      const name = `Download for macOS · ${chip}`;
+      if (variant?.available) {
+        const link = member.getByRole('link', { name, exact: true });
+        assert.equal(await link.getAttribute('href'), architecture === 'x64' ? '/api/downloads/macos/file?architecture=x64' : '/api/downloads/macos/file');
+      } else assert.equal(await member.getByRole('button', { name, exact: true }).isDisabled(), true);
+    }
     const firstCard = member.locator('.ac-download-card').first();
     assert.equal(await firstCard.getAttribute('data-platform'), 'android', 'Android first on an Android phone');
     assert.match(await firstCard.getAttribute('class'), /is-featured/);

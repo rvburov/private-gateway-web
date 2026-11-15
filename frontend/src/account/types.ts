@@ -13,6 +13,7 @@ export interface Invite {
 }
 export type InviteStatus = 'active' | 'used' | 'revoked' | 'expired';
 export type Platform = 'windows' | 'macos' | 'ios' | 'linux' | 'android';
+export type MacArchitecture = 'arm64' | 'x64';
 export interface Download {
   platform: Platform;
   available: boolean;
@@ -21,7 +22,10 @@ export interface Download {
   size_bytes: number | null;
   sha256: string | null;
   url: string | null;
+  architecture?: MacArchitecture;
+  variants?: DownloadVariant[] | null;
 }
+export type DownloadVariant = Omit<Download, 'platform' | 'variants' | 'architecture'> & { architecture: MacArchitecture };
 
 export interface SiteSession {
   id: number;
@@ -74,7 +78,13 @@ export function inviteStatus(invite: Invite, now = Date.now()): InviteStatus {
 export function safeDownloadUrl(download: Download): string | null {
   if (!download.available || !download.url) return null;
   if (download.platform !== 'ios') {
-    return download.url === `/api/downloads/${download.platform}/file` ? download.url : null;
+    const endpoint = `/api/downloads/${download.platform}/file`;
+    if (download.architecture !== undefined) {
+      if (download.platform !== 'macos') return null;
+      if (download.architecture === 'x64') return download.url === `${endpoint}?architecture=x64` ? download.url : null;
+      if (download.architecture !== 'arm64') return null;
+    }
+    return download.url === endpoint ? download.url : null;
   }
   try {
     const url = new URL(download.url);

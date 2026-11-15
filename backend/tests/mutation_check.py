@@ -306,14 +306,14 @@ cases = [
     # 2026-11-13: замечания разбора ленты — имя файла, бета, пределы размера, стоп-кран
     (
         "asset_name_unchecked",
-        "app/services/updates.py",
+        "app/services/release_assets.py",
         "    if not isinstance(name, str) or not FILE_NAME.fullmatch(name):\n",
         "    if not isinstance(name, str):\n",
         "test_updates.py::test_publish_update_refuses_what_programs_could_not_use",
     ),
     (
         "asset_name_allows_quotes",
-        "app/services/updates.py",
+        "app/services/release_assets.py",
         'FILE_NAME = re.compile(r"[A-Za-z0-9_~+-][A-Za-z0-9._~+-]{0,199}")',
         r'FILE_NAME = re.compile(r"[^./\\][^/\\]{0,199}")',
         "test_updates.py::test_publish_update_refuses_what_programs_could_not_use",
@@ -366,6 +366,35 @@ cases = [
         "    if row is not None and row.rollout == 0:\n",
         "    if False:\n",
         "test_updates.py::test_stopped_rollout_gives_no_files_and_refuses_earlier_tickets",
+    ),
+    # 2026-11-15: установщики macOS M/Intel, версия, сеанс и стоп-кран.
+    (
+        "macos_catalog_wrong_version",
+        "app/services/downloads.py",
+        "await db.get(AppUpdate, release.version)",
+        'await db.get(AppUpdate, "0.0.0")',
+        "test_macos_catalog_unit.py::test_exact_architecture_file_and_log_are_preserved",
+    ),
+    (
+        "macos_catalog_stopped_rollout",
+        "app/services/downloads.py",
+        "or update.rollout == 0",
+        "or False",
+        "test_macos_catalog_unit.py::test_intel_unavailable_cannot_return_arm_bytes[stopped]",
+    ),
+    (
+        "macos_catalog_arm_fallback",
+        "app/services/downloads.py",
+        'if architecture == "x64":\n',
+        "if False:\n",
+        "test_macos_catalog_unit.py::test_exact_architecture_file_and_log_are_preserved",
+    ),
+    (
+        "macos_catalog_session_guard",
+        "app/services/downloads.py",
+        "user = await current_user(db, request)",
+        "user = User(id=7)",
+        "test_macos_catalog_unit.py::test_new_intel_path_keeps_the_session_guard",
     ),
 ]
 only = set(sys.argv[1:])

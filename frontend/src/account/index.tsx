@@ -96,6 +96,29 @@ export function AccountLayout({ children }: { children: ReactNode }) {
 const platformNames: Record<Platform, string> = { windows: 'Windows', macos: 'macOS', ios: 'iOS', linux: 'Linux', android: 'Android' };
 const platformIcons = { windows: 'windows', macos: 'apple', ios: 'apple', linux: 'linux', android: 'android' } as const;
 
+function MacDownloads({ item, featured }: { item: Download; featured: boolean }) {
+  const { lang } = useApp();
+  const text = useAccountText();
+  return <div className="ac-mac-downloads">
+    <p className="ac-mac-hint">{text.macosChipHint}</p>
+    {(['arm64', 'x64'] as const).map((architecture) => {
+      // Старый каталог содержал только Apple silicon; отсутствие Intel не подменяем ARM-файлом.
+      const variant = item.variants?.find((entry) => entry.architecture === architecture);
+      const choice: Download = variant ? { ...variant, platform: 'macos' }
+        : architecture === 'arm64' && item.variants == null ? { ...item, architecture }
+        : { platform: 'macos', architecture, available: false, version: null, filename: null, size_bytes: null, sha256: null, url: null };
+      const url = safeDownloadUrl(choice);
+      const chip = architecture === 'arm64' ? text.macosArm : text.macosIntel;
+      return <div className="ac-mac-choice" key={architecture}>
+        {url ? <a className={`btn ${featured ? 'primary' : ''} ac-download-btn`} href={url} download><Icon name="download" />{text.download} macOS · {chip}</a>
+          : <button className="btn ac-download-btn" disabled><Icon name="download" />{text.download} macOS · {chip}</button>}
+        <div className="ac-file-label">{url ? <>{choice.version && <span>{text.version} {choice.version}</span>}{choice.filename && <span>{choice.filename}</span>}{choice.size_bytes !== null && <span>{new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(choice.size_bytes / 1024 / 1024)} MB</span>}</> : text.unavailable}</div>
+        {url && choice.sha256 && <details className="ac-checksum"><summary>{text.checksum}</summary><code>{choice.sha256}</code></details>}
+      </div>;
+    })}
+  </div>;
+}
+
 export function DownloadsPage() {
   const { lang } = useApp();
   const text = useAccountText();
@@ -125,11 +148,11 @@ export function DownloadsPage() {
           <div className="ac-os-icon"><Icon name={platformIcons[platform]} /></div>
           <div className="ac-download-title"><h2>{platformNames[platform]}</h2>{isFeatured && <span className="ac-tag">{featuredTag}</span>}</div>
           <p>{descriptions[platform]}</p><div className="ac-platform-space" />
-          {url ? <a className={`btn ${isFeatured ? 'primary' : ''} ac-download-btn`} href={url} download><Icon name="download" />{text.download} {platformNames[platform]}</a>
+          {platform === 'macos' ? <MacDownloads item={item} featured={isFeatured} /> : url ? <a className={`btn ${isFeatured ? 'primary' : ''} ac-download-btn`} href={url} download><Icon name="download" />{text.download} {platformNames[platform]}</a>
             : <button className="btn ac-download-btn" disabled><Icon name="download" />{text.unavailable}</button>}
-          <div className="ac-file-label">{url ? <>{item.version && <span>{text.version} {item.version}</span>}{item.filename && <span>{item.filename}</span>}{item.size_bytes !== null && <span>{new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(item.size_bytes / 1024 / 1024)} MB</span>}</> : text.unavailable}</div>
+          {platform !== 'macos' && <div className="ac-file-label">{url ? <>{item.version && <span>{text.version} {item.version}</span>}{item.filename && <span>{item.filename}</span>}{item.size_bytes !== null && <span>{new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(item.size_bytes / 1024 / 1024)} MB</span>}</> : text.unavailable}</div>}
           {platform === 'android' && <p className="ac-install-hint"><Icon name="info" /><span>{text.androidHint}</span></p>}
-          {url && item.sha256 && <details className="ac-checksum"><summary>{text.checksum}</summary><code>{item.sha256}</code></details>}
+          {platform !== 'macos' && url && item.sha256 && <details className="ac-checksum"><summary>{text.checksum}</summary><code>{item.sha256}</code></details>}
         </article>;
       })}</div>
       {!iosFirst && iosCard}

@@ -1,11 +1,13 @@
 """Файлы закрыты авторизацией; разрешенное имя не дает выйти из каталога выпусков."""
 
 import hashlib
+import json
 
 import pytest
+from sqlalchemy import select
 
 from app.core.config import get_settings
-from app.db.models import Release
+from app.db.models import AppUpdate, DownloadEvent, Release, utcnow
 from tests.helpers import register_user
 
 
@@ -16,6 +18,131 @@ async def download_root(tmp_path, monkeypatch):
     monkeypatch.setenv("PGWEB_DOWNLOAD_ROOT", str(root))
     get_settings.cache_clear()
     return root
+
+
+@pytest.fixture
+async def macos_catalog(client, db, download_root):
+    await register_user(client, db)
+    files = {}
+    for architecture in ("arm64", "x64"):
+        payload = f"Test macOS {architecture} installer, not an application".encode()
+        digest = hashlib.sha256(payload).hexdigest()
+        (download_root / f"{digest}.bin").write_bytes(payload)
+        files[architecture] = {
+            "file": f"PrivateGateway-1.2.3-osx-{architecture}.dmg",
+            "sha256": digest,
+            "size": len(payload),
+        }
+    arm = files["arm64"]
+    release = Release(
+        platform="macos",
+        version="1.2.3",
+        filename=arm["file"],
+        storage_name=arm["sha256"] + ".bin",
+        size_bytes=arm["size"],
+        sha256=arm["sha256"],
+    )
+    update = AppUpdate(
+        version="1.2.3",
+        channel="stable",
+        rollout=100,
+        published_at=utcnow(),
+        manifest=json.dumps({"assets": {"osx-x64-dmg": files["x64"]}}).encode(),
+        signature="dGVzdA==",
+    )
+    db.add_all([release, update])
+    await db.commit()
+    return release, update, files
+
+
+async def test_macos_catalog_downloads_each_chip_with_its_own_bytes_and_log(
+    client,
+    clients,
+    db,
+    download_root,
+    macos_catalog,
+):
+    _, _, files = macos_catalog
+    mac = next(
+        x for x in (await client.get("/api/downloads")).json()["items"] if x["platform"] == "macos"
+    )
+    assert mac["url"] == "/api/downloads/macos/file"
+    assert mac["filename"] == files["arm64"]["file"]
+    variants = {x["architecture"]: x for x in mac["variants"]}
+    assert set(variants) == {"arm64", "x64"}
+    anonymous = await clients(csrf=False)
+    for architecture, variant in variants.items():
+        asset = files[architecture]
+        assert variant["available"] is True
+        assert variant["filename"] == asset["file"]
+        assert (await anonymous.get(variant["url"])).status_code == 401
+        response = await client.get(variant["url"])
+        assert response.status_code == 200
+        assert response.content == (download_root / f"{asset['sha256']}.bin").read_bytes()
+        assert response.headers["x-checksum-sha256"] == asset["sha256"]
+        assert asset["file"] in response.headers["content-disposition"]
+    events = (await db.scalars(select(DownloadEvent).order_by(DownloadEvent.id))).all()
+    assert [(x.platform, x.filename) for x in events] == [
+        ("macos", files["arm64"]["file"]),
+        ("macos", files["x64"]["file"]),
+    ]
+
+
+@pytest.mark.parametrize("reason", ["old", "stopped", "beta", "missing", "size", "symlink"])
+async def test_unavailable_intel_is_not_listed_or_replaced_with_arm(
+    client,
+    db,
+    download_root,
+    macos_catalog,
+    reason,
+):
+    _, update, files = macos_catalog
+    intel_path = download_root / f"{files['x64']['sha256']}.bin"
+    if reason == "old":
+        update.version = "1.2.2"  # Не брать Intel от другой версии текущего каталога.
+    elif reason == "stopped":
+        update.rollout = 0
+    elif reason == "beta":
+        update.channel = "beta"
+    elif reason == "missing":
+        intel_path.unlink()
+    elif reason == "size":
+        intel_path.write_bytes(b"short")
+    elif reason == "symlink":
+        outside = download_root.parent / "outside-intel.dmg"
+        outside.write_bytes(intel_path.read_bytes())
+        intel_path.unlink()
+        intel_path.symlink_to(outside)
+    await db.commit()
+    mac = next(
+        x for x in (await client.get("/api/downloads")).json()["items"] if x["platform"] == "macos"
+    )
+    arm, intel = mac["variants"]
+    assert arm["available"] is True
+    assert intel["available"] is False
+    assert intel["url"] is None and intel["version"] is None
+    assert (await client.get("/api/downloads/macos/file?architecture=x64")).status_code == 404
+    assert (await client.get("/api/downloads/macos/file")).status_code == 200
+
+
+async def test_disabled_mac_release_and_invalid_architecture_have_no_download(
+    client,
+    db,
+    macos_catalog,
+):
+    release, _, _ = macos_catalog
+    for url in (
+        "/api/downloads/windows/file?architecture=x64",
+        "/api/downloads/macos/file?architecture=unknown",
+    ):
+        assert (await client.get(url)).status_code == 404
+    release.enabled = False
+    await db.commit()
+    mac = next(
+        x for x in (await client.get("/api/downloads")).json()["items"] if x["platform"] == "macos"
+    )
+    assert all(not variant["available"] for variant in mac["variants"])
+    assert (await client.get("/api/downloads/macos/file?architecture=x64")).status_code == 404
 
 
 async def test_empty_catalog_does_not_invent_versions_or_urls(client, db):

@@ -3,7 +3,6 @@
   const PG = window.PG;
   const esc = (value) => PG.escape(String(value));
   const icon = (name) => PG.icon(name);
-  let architecture = 'Apple Silicon';
   let search = '';
   let filter = 'all';
   let inviteFilter = 'all';
@@ -53,7 +52,10 @@
     return icon(({ Windows: 'windows', macOS: 'apple', iOS: 'apple', Linux: 'linux', Android: 'android' })[platform]);
   }
   function downloadCard(platform, subtitle, isFeatured, tag) {
-    return `<article class="ac-download-card ${isFeatured ? 'is-featured' : ''}" data-platform="${platform.toLowerCase()}"><div class="ac-os-icon">${osIcon(platform)}</div><div class="ac-download-title"><h2>${platform}</h2>${isFeatured ? `<span class="ac-tag">${tag}</span>` : ''}</div><p>${subtitle}</p>${platform === 'macOS' ? `<div class="ac-architecture" role="group" aria-label="Архитектура macOS"><button data-ac-arch="Apple Silicon" aria-pressed="${architecture === 'Apple Silicon'}" class="${architecture === 'Apple Silicon' ? 'selected' : ''}">Apple Silicon</button><button data-ac-arch="Intel" aria-pressed="${architecture === 'Intel'}" class="${architecture === 'Intel' ? 'selected' : ''}">Intel</button></div>` : '<div class="ac-platform-space"></div>'}<button class="btn ${isFeatured ? 'primary' : ''} ac-download-btn" data-ac-download="${platform}">${icon('download')} Скачать для ${platform}</button><div class="ac-file-label">Макет · файл не подключен</div>${platform === 'Android' ? `<p class="ac-install-hint">${icon('info')}<span>После скачивания откройте файл и разрешите установку из этого источника.</span></p>` : ''}</article>`;
+    const buttonClass = `btn ${isFeatured ? 'primary' : ''} ac-download-btn`;
+    const choices = platform === 'macOS' ? `<div class="ac-mac-downloads"><p class="ac-mac-hint">Выберите чип из меню Apple → Об этом Mac.</p>${['Apple silicon (M)', 'Intel'].map(chip => `<div class="ac-mac-choice"><button class="${buttonClass}" data-ac-download="macOS" data-ac-chip="${chip}">${icon('download')} Скачать для macOS · ${chip}</button><div class="ac-file-label">Макет · файл не подключен</div></div>`).join('')}</div>`
+      : `<button class="${buttonClass}" data-ac-download="${platform}">${icon('download')} Скачать для ${platform}</button><div class="ac-file-label">Макет · файл не подключен</div>`;
+    return `<article class="ac-download-card ${isFeatured ? 'is-featured' : ''}" data-platform="${platform.toLowerCase()}"><div class="ac-os-icon">${osIcon(platform)}</div><div class="ac-download-title"><h2>${platform}</h2>${isFeatured ? `<span class="ac-tag">${tag}</span>` : ''}</div><p>${subtitle}</p><div class="ac-platform-space"></div>${choices}${platform === 'Android' ? `<p class="ac-install-hint">${icon('info')}<span>После скачивания откройте файл и разрешите установку из этого источника.</span></p>` : ''}</article>`;
   }
   function downloads() {
     // 2026-11-13: карточка системы посетителя первая и с основной кнопкой; неизвестная — Windows
@@ -242,9 +244,8 @@
       const data = button.dataset;
       if (data.accountRoute) { closeModal(); PG.navigate(data.accountRoute); return; }
       if (data.acDownload) {
-        modal(`Private Gateway для ${esc(data.acDownload)}`, `<div class="ac-download-modal-icon">${osIcon(data.acDownload)}</div><p>Здесь будет скачивание клиента для <strong>${esc(data.acDownload)}${data.acDownload === 'macOS' ? ` · ${esc(architecture)}` : ''}</strong>.</p><div class="ac-role-hint">Макет · файл не подключен. Версия и реальная ссылка не заданы. Никакие файлы не скачиваются.</div>`, '<button class="btn primary" data-ac-close>Понятно</button>'); return;
+        modal(`Private Gateway для ${esc(data.acDownload)}`, `<div class="ac-download-modal-icon">${osIcon(data.acDownload)}</div><p>Здесь будет скачивание клиента для <strong>${esc(data.acDownload)}${data.acDownload === 'macOS' ? ` · ${esc(data.acChip || '')}` : ''}</strong>.</p><div class="ac-role-hint">Макет · файл не подключен. Версия и реальная ссылка не заданы. Никакие файлы не скачиваются.</div>`, '<button class="btn primary" data-ac-close>Понятно</button>'); return;
       }
-      if (data.acArch) { architecture = data.acArch; refresh(route); return; }
       if (data.acSystem) { previewSystem = data.acSystem; refresh(route); return; }
       if (data.acOwn) { ownAccess(data.acOwn); return; }
       if (data.acEndSession) { const index = sessions.findIndex(item => item.id === data.acEndSession); if (index >= 0) sessions.splice(index, 1); refresh(route); PG.toast('В макете сеанс завершен.'); return; }
